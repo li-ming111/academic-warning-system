@@ -1,0 +1,36 @@
+package com.academic.service;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.academic.entity.Score;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+public interface ScoreService extends IService<Score> {
+
+    /**
+     * 获取学生当期成绩列表
+     */
+    List<Score> getStudentScores(Long studentId, String semester);
+
+    /**
+     * 计算学生GPA
+     */
+    BigDecimal calculateGPA(Long studentId);
+
+    /**
+     * 计算学生平均分
+     */
+    BigDecimal calculateAverageScore(Long studentId);
+
+    /**
+     * 获取学生课程数
+     */
+    Integer getCourseCount(Long studentId, String semester);
+
+    /**
+     * 检测预警
+     */
+    void detectWarnings(Long studentId);
+
+}

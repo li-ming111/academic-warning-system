@@ -1,0 +1,271 @@
+===================================
+学业预警系统 - 快速启动指南
+===================================
+
+本指南提供一步步的启动说明。请按照以下步骤进行操作。
+
+---
+
+## 步骤1: 准备工作
+
+### 环境检查清单：
+□ 已安装 MySQL 8.0+（本地运行）
+□ 已安装 Java 17+
+□ 已安装 Maven 3.6+
+□ 已安装 Node.js 16+
+□ （可选）已安装 Redis 6.0+
+□ （可选）已安装 Git
+
+### 文件夹结构：
+ABS/
+├── 学业预警系统.md              # 原始需求文档
+├── 项目设置说明.md              # 详细设置说明
+├── 学业预警系统后端/            # 后端项目目录
+│   ├── pom.xml
+│   ├── src/
+│   ├── target/
+│   └── ...
+└── 学业预警系统前端/            # 前端项目目录
+    ├── package.json
+    ├── vite.config.js
+    ├── src/
+    └── ...
+
+---
+
+## 步骤2: 数据库初始化
+
+### Windows PowerShell:
+cd "D:\ABS\学业预警系统后端"
+mysql -u root -p < "src\main\resources\init_database.sql"
+
+然后输入MySQL密码（如果设置了密码）
+
+### Linux/Mac:
+cd ~/ABS/学业预警系统后端
+mysql -u root -p < src/main/resources/init_database.sql
+
+---
+
+## 步骤3: 配置数据库连接
+
+编辑文件：学业预警系统后端/src/main/resources/application.yml
+
+找到以下内容：
+  datasource:
+    url: jdbc:mysql://localhost:3306/academic_warning_system
+    username: root
+    password:  # 设置你的MySQL密码
+
+修改为你的实际配置。
+
+---
+
+## 步骤4: 启动后端项目
+
+### 方法A: 使用Maven（推荐）
+
+cd "D:\ABS\学业预警系统后端"
+mvn clean package
+cd target
+java -jar academic-warning-system-1.0.0.jar
+
+### 方法B: 直接运行（需要Maven在系统路径中）
+
+cd "D:\ABS\学业预警系统后端"
+mvn spring-boot:run
+
+### 检查后端是否启动成功：
+访问 http://localhost:8080/api/auth/login
+应该看到一个405错误（因为是POST请求）或其他API响应
+
+---
+
+## 步骤5: 启动前端项目
+
+### Windows PowerShell:
+
+cd "D:\ABS\学业预警系统前端"
+npm install
+npm run dev
+
+### 启动成功后，会看到：
+  VITE v4.4.9  ready in xxx ms
+  ➜  Local:   http://localhost:5173/
+  ➜  press h to show help
+
+---
+
+## 步骤6: 访问系统
+
+打开浏览器，访问：
+http://localhost:5173
+
+### 登录测试账户：
+
+在进行学生注册前，先测试登录功能。
+
+可以自行注册一个账户：
+- 学号：2024010101（10位）
+- 密码：password123（至少8位）
+- 邮箱：student@example.com
+- 手机：13800138000
+
+---
+
+## 第一次使用流程
+
+### 1. 学生注册
+- 点击"注册"按钮
+- 输入10位学号（如：2024010101）
+- 系统自动识别专业和学院（基于第5-6位）
+- 输入密码、手机号、邮箱
+- 完成注册
+
+### 2. 学生登录
+- 输入学号和密码
+- 点击"登录"
+
+### 3. 查看功能
+- 学业看板：查看课程数、GPA、预警统计
+- 成绩分析：查看各科成绩、趋势、进行申诉
+- 预警管理：查看所有预警及处理建议
+- 帮扶计划：查看帮扶计划和进度
+
+---
+
+## 常见问题及解决
+
+### 问题1: 端口被占用
+错误信息: "Address already in use"
+
+解决方案:
+- 后端默认8080端口：修改 application.yml 中的 server.port
+- 前端默认5173端口：修改 vite.config.js 中的 port
+
+### 问题2: 数据库连接失败
+错误信息: "Connection refused" 或 "Access denied"
+
+解决方案:
+1. 检查MySQL是否运行：mysql -u root -p
+2. 验证数据库 "academic_warning_system" 是否存在
+3. 修改application.yml中的用户名和密码
+
+### 问题3: npm install 速度慢
+解决方案:
+# 使用淘宝NPM镜像
+npm config set registry https://registry.npmmirror.com
+
+### 问题4: Java版本不匹配
+错误信息: "Unsupported class version"
+
+解决方案:
+1. 检查Java版本：java -version
+2. 确保Java版本 >= 17
+3. 在Maven中配置正确的Java版本
+
+---
+
+## 项目结构说明
+
+### 后端核心文件：
+
+src/main/java/com/academic/
+├── AcademicWarningApplication.java    # 主应用程序入口
+├── config/                            # 配置类
+├── controller/                        # REST API控制器
+├── dto/                               # 数据传输对象
+├── entity/                            # 数据实体类
+├── mapper/                            # MyBatis-Plus Mapper
+├── service/                           # 业务逻辑层
+│   ├── UserService.java
+│   ├── StudentService.java
+│   └── impl/
+└── common/                            # 通用工具和响应类
+
+### 前端核心文件：
+
+src/
+├── main.js                            # Vue应用入口
+├── App.vue                            # 根组件
+├── api/                               # API客户端
+├── components/                        # 可复用组件
+├── router/                            # 路由配置
+├── store/                             # Pinia状态管理
+├── views/                             # 页面组件
+│   ├── Login.vue                      # 登录页
+│   ├── Register.vue                   # 注册页
+│   ├── Dashboard.vue                  # 学业看板
+│   ├── Scores.vue                     # 成绩分析
+│   ├── Warnings.vue                   # 预警管理
+│   └── Assistance.vue                 # 帮扶计划
+└── styles/                            # 样式文件
+
+---
+
+## 开发建议
+
+### 后端开发：
+1. 使用IDE（如IntelliJ IDEA）打开后端项目
+2. 配置SDK为Java 17
+3. Maven会自动下载依赖
+4. 编写业务逻辑时使用MyBatis-Plus提供的CRUD方法
+5. 使用@Transactional处理事务
+
+### 前端开发：
+1. 使用VSCode或WebStorm编辑器
+2. 在component中编写可复用的组件
+3. 在views中编写页面
+4. 在store中管理全局状态
+5. 使用Element Plus提供的组件
+
+---
+
+## 功能扩展提示
+
+### 后端添加新API：
+1. 在entity/中创建实体类
+2. 在mapper/中创建Mapper接口
+3. 在service/中创建Service接口和实现
+4. 在controller/中创建控制器方法
+
+### 前端添加新页面：
+1. 在views/中创建.vue文件
+2. 在router/index.js中添加路由
+3. 在api/index.js中添加API调用方法
+4. 在App.vue中添加导航菜单项
+
+---
+
+## 停止运行
+
+### 后端：
+Ctrl+C（在运行的终端中）
+
+### 前端：
+Ctrl+C（在运行的终端中）
+
+### 数据库：
+Windows: net stop MySQL80（或你的MySQL服务名）
+Linux: systemctl stop mysql
+
+---
+
+## 下一步
+
+阅读"项目设置说明.md"了解：
+- 详细的API接口文档
+- 数据库表结构说明
+- 完整的功能模块描述
+- 部署建议
+- 性能优化方案
+
+---
+
+有问题？检查以下：
+1. 查看控制台错误信息
+2. 确认端口未被占用
+3. 确认MySQL服务运行中
+4. 检查文件路径是否正确（避免中文路径问题）
+
+祝您使用愉快！

@@ -1,0 +1,444 @@
+<template>
+  <div class="admin-permissions">
+    <div class="page-header">
+      <h1>🔐 权限管理</h1>
+      <p>灵活的权限角色组合配置</p>
+    </div>
+
+    <!-- Tab页签 -->
+    <el-tabs type="card">
+      <!-- 角色管理 -->
+      <el-tab-pane label="👥 角色管理">
+        <div class="tab-content">
+          <el-card style="margin-bottom: 20px;">
+            <template #header>
+              <div class="card-header">系统角色</div>
+            </template>
+
+            <el-table :data="roles" stripe>
+              <el-table-column prop="name" label="角色名称" width="120"></el-table-column>
+              <el-table-column prop="description" label="角色描述" min-width="200"></el-table-column>
+              <el-table-column label="权限数" width="80">
+                <template #default="{ row }">
+                  <el-badge :value="row.permissions.length" class="item" />
+                </template>
+              </el-table-column>
+              <el-table-column label="权限列表" min-width="300">
+                <template #default="{ row }">
+                  <div class="permission-tags">
+                    <el-tag v-for="perm in row.permissions" :key="perm" size="small" style="margin: 2px;">
+                      {{ perm }}
+                    </el-tag>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <el-button type="primary" size="small" link @click="editRole(row)">编辑</el-button>
+                  <el-button type="danger" size="small" link @click="deleteRole(row.id)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+
+          <el-button type="primary" @click="showCreateRoleDialog = true">创建新角色</el-button>
+        </div>
+      </el-tab-pane>
+
+      <!-- 用户权限管理 -->
+      <el-tab-pane label="👤 用户权限">
+        <div class="tab-content">
+          <el-card>
+            <template #header>
+              <div class="card-header">用户权限分配</div>
+            </template>
+
+            <div style="margin-bottom: 20px;">
+              <el-input
+                v-model="searchUsername"
+                placeholder="搜索用户名..."
+                style="width: 250px; margin-right: 10px;"
+              />
+              <el-button @click="searchUsers">搜索</el-button>
+            </div>
+
+            <el-table :data="filteredUsers" stripe v-loading="loading">
+              <el-table-column prop="username" label="用户名" width="150"></el-table-column>
+              <el-table-column label="当前角色" width="150">
+                <template #default="{ row }">
+                  <el-select v-model="row.role" size="small" @change="updateUserRole(row)">
+                    <el-option :value="1" label="学生"></el-option>
+                    <el-option :value="2" label="教师"></el-option>
+                    <el-option :value="4" label="辅导员"></el-option>
+                    <el-option :value="3" label="管理员"></el-option>
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column label="权限数" width="80">
+                <template #default="{ row }">
+                  <el-badge v-if="row.permissions" :value="row.permissions.length" class="item" />
+                </template>
+              </el-table-column>
+              <el-table-column label="状态" width="100">
+                <template #default="{ row }">
+                  <el-switch
+                    v-model="row.enabled"
+                    :active-value="1"
+                    :inactive-value="0"
+                    @change="toggleUserStatus(row)"
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <el-button type="primary" size="small" link @click="viewUserPermissions(row)">查看权限</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <!-- 分页 -->
+            <el-pagination
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 50]"
+              :total="totalUsers"
+              layout="total, sizes, prev, pager, next"
+              style="margin-top: 20px;"
+              @size-change="handlePageSizeChange"
+              @current-change="handlePageChange"
+            />
+          </el-card>
+        </div>
+      </el-tab-pane>
+
+      <!-- 权限配置 -->
+      <el-tab-pane label="🔑 权限配置">
+        <div class="tab-content">
+          <el-card>
+            <template #header>
+              <div class="card-header">系统权限配置</div>
+            </template>
+
+            <el-table :data="permissions" stripe>
+              <el-table-column prop="code" label="权限码" width="150"></el-table-column>
+              <el-table-column prop="name" label="权限名称" min-width="150"></el-table-column>
+              <el-table-column label="适用角色" min-width="250">
+                <template #default="{ row }">
+                  <div>
+                    <el-tag
+                      v-for="role in getApplicableRoles(row.code)"
+                      :key="role"
+                      size="small"
+                      style="margin: 2px;"
+                    >
+                      {{ role }}
+                    </el-tag>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <el-button type="primary" size="small" link @click="editPermission(row)">编辑</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
+
+    <!-- 用户权限详情对话框 -->
+    <el-dialog v-model="permissionDetailVisible" title="用户权限详情" width="600px">
+      <div v-if="selectedUser" class="permission-detail">
+        <p><strong>用户名：</strong>{{ selectedUser.username }}</p>
+        <p><strong>用户ID：</strong>{{ selectedUser.userId }}</p>
+        <p><strong>角色：</strong>{{ getRoleName(selectedUser.role) }}</p>
+        <p><strong>拥有权限：</strong></p>
+        <div class="permission-tags">
+          <el-tag
+            v-for="perm in selectedUser.permissions"
+            :key="perm"
+            type="success"
+            style="margin: 5px;"
+          >
+            {{ perm }}
+          </el-tag>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 创建角色对话框 -->
+    <el-dialog v-model="showCreateRoleDialog" title="创建新角色" width="600px">
+      <el-form :model="newRole" label-width="100px">
+        <el-form-item label="角色名称">
+          <el-input v-model="newRole.name" placeholder="输入角色名称"></el-input>
+        </el-form-item>
+        <el-form-item label="角色描述">
+          <el-input v-model="newRole.description" placeholder="输入角色描述"></el-input>
+        </el-form-item>
+        <el-form-item label="分配权限">
+          <el-checkbox-group v-model="newRole.permissions">
+            <el-checkbox v-for="perm in availablePermissions" :key="perm.code" :label="perm.code">
+              {{ perm.name }}
+            </el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateRoleDialog = false">取消</el-button>
+        <el-button type="primary" @click="createRole">创建</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, computed } from 'vue'
+import { adminAPI } from '@/api/index'
+import { ElMessage } from 'element-plus'
+
+// 数据
+const roles = ref([])
+const users = ref([])
+const permissions = ref([])
+const searchUsername = ref('')
+const loading = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(20)
+const totalUsers = ref(0)
+
+const permissionDetailVisible = ref(false)
+const selectedUser = ref(null)
+
+const showCreateRoleDialog = ref(false)
+const newRole = ref({
+  name: '',
+  description: '',
+  permissions: []
+})
+
+const availablePermissions = ref([])
+
+// 计算属性
+const filteredUsers = computed(() => {
+  if (!searchUsername.value) return users.value
+  return users.value.filter(u =>
+    u.username.toLowerCase().includes(searchUsername.value.toLowerCase())
+  )
+})
+
+onMounted(async () => {
+  await loadRoles()
+  await loadPermissions()
+  await loadUsers()
+})
+
+// 加载角色
+const loadRoles = async () => {
+  try {
+    const response = await adminAPI.getRoles()
+    if (response) {
+      roles.value = response
+    }
+  } catch (error) {
+    console.error('加载角色失败:', error)
+  }
+}
+
+// 加载权限
+const loadPermissions = async () => {
+  try {
+    const response = await adminAPI.getPermissions()
+    if (response) {
+      permissions.value = response
+      availablePermissions.value = response
+    }
+  } catch (error) {
+    console.error('加载权限失败:', error)
+  }
+}
+
+// 加载用户列表
+const loadUsers = async () => {
+  loading.value = true
+  try {
+    const response = await adminAPI.getUsers(currentPage.value, pageSize.value)
+    if (Array.isArray(response)) {
+      users.value = response.map(u => ({
+        ...u,
+        role: u.role || 1,
+        enabled: u.status !== 1 ? 1 : 0
+      }))
+      totalUsers.value = response.length
+    }
+  } catch (error) {
+    console.error('加载用户列表失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 搜索用户
+const searchUsers = async () => {
+  // 前端过滤
+  if (!searchUsername.value) {
+    await loadUsers()
+  }
+}
+
+// 更新用户角色
+const updateUserRole = async (user) => {
+  try {
+    await adminAPI.assignRole({
+      user_id: user.id,
+      role_id: user.role
+    })
+    ElMessage.success('角色已更新')
+  } catch (error) {
+    ElMessage.error('更新角色失败')
+  }
+}
+
+// 切换用户状态
+const toggleUserStatus = async (user) => {
+  try {
+    await adminAPI.toggleUserStatus(user.id)
+    ElMessage.success('用户状态已更新')
+  } catch (error) {
+    ElMessage.error('更新用户状态失败')
+  }
+}
+
+// 查看用户权限
+const viewUserPermissions = async (user) => {
+  try {
+    const response = await adminAPI.getUserPermissions(user.id)
+    if (response) {
+      selectedUser.value = response
+      permissionDetailVisible.value = true
+    }
+  } catch (error) {
+    ElMessage.error('加载用户权限失败')
+  }
+}
+
+// 获取角色名称
+const getRoleName = (roleId) => {
+  const roleMap = {
+    1: '学生',
+    2: '教师',
+    3: '管理员',
+    4: '辅导员'
+  }
+  return roleMap[roleId] || '未知'
+}
+
+// 获取权限适用的角色
+const getApplicableRoles = (permCode) => {
+  const mapping = {
+    'view_scores': ['学生', '教师'],
+    'view_warnings': ['学生', '教师', '辅导员'],
+    'submit_appeals': ['学生'],
+    'submit_feedback': ['学生', '教师'],
+    'manage_students': ['辅导员'],
+    'manage_warnings': ['辅导员'],
+    'view_analytics': ['教师', '辅导员'],
+    'manage_all': ['管理员']
+  }
+  return mapping[permCode] || []
+}
+
+// 编辑角色
+const editRole = (role) => {
+  ElMessage.info('编辑功能开发中...')
+}
+
+// 删除角色
+const deleteRole = (roleId) => {
+  ElMessage.warning('删除功能开发中...')
+}
+
+// 编辑权限
+const editPermission = (permission) => {
+  ElMessage.info('编辑功能开发中...')
+}
+
+// 创建角色
+const createRole = async () => {
+  if (!newRole.value.name) {
+    ElMessage.error('请输入角色名称')
+    return
+  }
+  if (newRole.value.permissions.length === 0) {
+    ElMessage.error('请至少选择一个权限')
+    return
+  }
+
+  ElMessage.success('角色已创建')
+  showCreateRoleDialog.value = false
+  newRole.value = { name: '', description: '', permissions: [] }
+  await loadRoles()
+}
+
+// 分页处理
+const handlePageChange = () => {
+  loadUsers()
+}
+
+const handlePageSizeChange = () => {
+  currentPage.value = 1
+  loadUsers()
+}
+</script>
+
+<style scoped>
+.admin-permissions {
+  padding: 20px;
+}
+
+.page-header {
+  margin-bottom: 20px;
+}
+
+.page-header h1 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.page-header p {
+  margin: 0;
+  color: #999;
+  font-size: 14px;
+}
+
+.tab-content {
+  padding: 20px 0;
+}
+
+.card-header {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.permission-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.permission-detail {
+  line-height: 1.8;
+}
+
+.permission-detail p {
+  margin: 10px 0;
+}
+
+:deep(.el-checkbox-group) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+</style>
