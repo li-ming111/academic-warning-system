@@ -1,0 +1,19 @@
+# Maven
+*/target/
+*.class
+*.jar
+*.war
+
+# Node
+*/node_modules/
+dist/
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Build
+.gradle/
+build/
