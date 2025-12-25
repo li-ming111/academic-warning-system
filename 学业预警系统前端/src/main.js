@@ -6,28 +6,36 @@ import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
 
-const app = createApp(App)
-const pinia = createPinia()
-
-// 全局错误拦截：静默处理资源加载失败（仅记录，不中断）
+// 全局错误捕获
 window.addEventListener('error', (e) => {
-  if (e.message && e.message.includes('is not a function')) {
-    console.warn('⚠️ 捕获的动态加载错误（已忽略）:', e.message)
-    // 防止错误传播
-    e.preventDefault()
+  // 过滤掉第三方扩展/插件的错误
+  if (e.target && e.target.tagName === 'IMG') {
+    console.warn('⚠️ 资源加载失败（可能是扩展冲突）:', e.target.src)
+    return // 不中断，继续运行
   }
+  
+  const errorMsg = e.message || e.toString() || '未知错误'
+  const errorObj = e.error || e.filename || ''
+  console.warn('⚠️ 全局错误捕获:', errorMsg, errorObj)
+  console.error('完整错误:', e)
+  e.preventDefault()
 }, true)
 
-// 处理unhandledrejection（Promise拒绝）
 window.addEventListener('unhandledrejection', (e) => {
-  if (e.reason && e.reason.message && e.reason.message.includes('is not a function')) {
-    console.warn('⚠️ 捕获的Promise拒绝（已忽略）:', e.reason.message)
-    e.preventDefault()
-  }
+  const reason = e.reason || '未知Promise错误'
+  console.warn('⚠️ Promise拒绝:', reason)
+  console.error('完整Promise错误:', e)
+  e.preventDefault()
 })
 
-app.use(ElementPlus, { locale: zhCn })
-app.use(pinia)
-app.use(router)
-
-app.mount('#app')
+try {
+  const app = createApp(App)
+  const pinia = createPinia()
+  app.use(ElementPlus, { locale: zhCn })
+  app.use(pinia)
+  app.use(router)
+  app.mount('#app')
+} catch (err) {
+  console.error('应用初始化失败:', err)
+  // 页面仍然显示，即使有错误
+}

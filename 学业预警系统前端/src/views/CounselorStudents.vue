@@ -79,6 +79,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { counselorAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const searchName = ref('')
 const selectedClass = ref('')
@@ -98,7 +99,7 @@ onMounted(async () => {
 
 const loadStudents = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     const counselorId = localStorage.getItem('counselorId') || userId
     if (!counselorId) return
     const response = await counselorAPI.getStudents(counselorId)

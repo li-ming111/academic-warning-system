@@ -28,6 +28,9 @@ export const studentAPI = {
   getStudentInfo: (studentId) => {
     return apiClient.get(`/students/${studentId}`)
   },
+  getStudentInfoByUserId: (userId) => {
+    return apiClient.get(`/students/student-by-user/${userId}`)
+  },
   getStudentGPA: (studentId) => {
     return apiClient.get(`/students/${studentId}/gpa`)
   },
@@ -45,6 +48,10 @@ export const studentAPI = {
   },
   updatePlanProgress: (planId, progress) => {
     return apiClient.post(`/students/assistance/${planId}/progress`, null, { params: { progress } })
+  },
+  // ========== 班级信息 ==========
+  getClassInfo: (studentId) => {
+    return apiClient.get(`/students/${studentId}/class-info`)
   },
   // ========== 通知管理 ==========
   
@@ -174,6 +181,37 @@ export const studentAPI = {
   },
   getEvaluationStatistics: (studentId) => {
     return apiClient.get(`/students/evaluations/${studentId}/statistics`)
+  },
+  getUserSettings: (userId) => {
+    return apiClient.get(`/students/settings/${userId}`)
+  },
+  updateUserSettings: (userId, settings) => {
+    return apiClient.put(`/students/settings/${userId}`, settings)
+  },
+  getSecurityLogs: (userId, page = 1, pageSize = 10) => {
+    return apiClient.get(`/students/settings/${userId}/security-logs`, { params: { page, pageSize } })
+  },
+  getAppeals: (studentId) => {
+    return apiClient.get(`/students/appeals/${studentId}/list`)
+  },
+  getUnreadNotificationCountAdvanced: (userId) => {
+    return apiClient.get(`/students/notification-center/${userId}/unread-count`)
+  },
+  getUnreadNotificationsAdvanced: (userId) => {
+    return apiClient.get(`/students/notification-center/${userId}/unread`)
+  },
+  // ========== 消息管理API ==========
+  getMessages: (userId) => {
+    return apiClient.get(`/students/messages/${userId}`)
+  },
+  getUnreadCount: (userId) => {
+    return apiClient.get(`/students/messages/${userId}/unread-count`)
+  },
+  sendMessage: (data) => {
+    return apiClient.post(`/students/messages/send`, data)
+  },
+  markMessageAsRead: (messageId) => {
+    return apiClient.post(`/students/messages/${messageId}/mark-read`)
   }
 }
 
@@ -211,8 +249,11 @@ export const teacherAPI = {
   replyFeedback: (feedbackId, data) => {
     return apiClient.put(`/teachers/feedbacks/${feedbackId}`, data)
   },
-  getEnrollments: (courseId) => {
-    return apiClient.get(`/teachers/enrollments`, { params: { course_id: courseId } })
+  getEnrollments: (teacherId, courseId) => {
+    const params = {}
+    if (teacherId) params.teacherId = teacherId
+    if (courseId) params.course_id = courseId
+    return apiClient.get(`/teachers/enrollments`, { params })
   },
   saveCommunication: (data) => {
     return apiClient.post(`/teachers/communications`, data)
@@ -231,6 +272,13 @@ export const teacherAPI = {
   },
   processWarning: (warningId, data) => {
     return apiClient.post(`/teachers/warnings/${warningId}/process`, data)
+  },
+  // ============= 班级管理申请API =============
+  submitClassManagementRequest: (data) => {
+    return apiClient.post(`/teachers/class-management/request`, data)
+  },
+  getMyClassManagementRequests: (teacherId) => {
+    return apiClient.get(`/teachers/class-management/requests`, { params: { teacherId } })
   },
   getTodos: (teacherId) => {
     return apiClient.get(`/teachers/todos/${teacherId}`)
@@ -335,6 +383,9 @@ export const counselorAPI = {
   getClasses: (counselorId) => {
     return apiClient.get(`/counselors/classes`, { params: { counselor_id: counselorId } })
   },
+  getClassActivities: (counselorId) => {
+    return apiClient.get(`/counselors/classes/activities`, { params: { counselor_id: counselorId } })
+  },
   getClassDetail: (classId) => {
     return apiClient.get(`/counselors/classes/${classId}/detail`)
   },
@@ -398,8 +449,7 @@ export const adminAPI = {
     return apiClient.get(`/admin/colleges/${collegeId}/majors`)
   },
   getMajors: () => {
-    // 临时返回空数组，后端需实现该端点
-    return Promise.resolve([])
+    return apiClient.get(`/admin/majors`)
   },
   createMajor: (data) => {
     return apiClient.post(`/admin/majors`, data)
@@ -434,6 +484,9 @@ export const adminAPI = {
   getStatistics: () => {
     return apiClient.get(`/admin/statistics`)
   },
+  getCourses: () => {
+    return apiClient.get(`/admin/courses`)
+  },
   getCourseRequirements: () => {
     // 临时返回空数组，后端需实现该端点
     return Promise.resolve([])
@@ -449,6 +502,9 @@ export const adminAPI = {
   },
   updateUser: (userId, data) => {
     return apiClient.put(`/admin/users/${userId}`, data)
+  },
+  deleteUser: (userId) => {
+    return apiClient.delete(`/admin/users/${userId}`)
   },
   // ============= 权限管理API =============
   getRoles: () => {
@@ -527,5 +583,21 @@ export const adminAPI = {
   },
   restoreBackup: (backupId) => {
     return apiClient.post(`/admin/backup/${backupId}/restore`)
+  },
+  getExportHistory: () => {
+    return apiClient.get(`/admin/export/history`)
+  },
+  deleteExport: (exportId) => {
+    return apiClient.delete(`/admin/export/${exportId}`)
+  },
+  // ============= 班级管理申请API =============
+  getPendingClassManagementRequests: () => {
+    return apiClient.get(`/admin/class-management/pending-requests`)
+  },
+  approveClassManagementRequest: (requestId) => {
+    return apiClient.post(`/admin/class-management/approve/${requestId}`)
+  },
+  rejectClassManagementRequest: (requestId, reason) => {
+    return apiClient.post(`/admin/class-management/reject/${requestId}`, { reason })
   }
 }

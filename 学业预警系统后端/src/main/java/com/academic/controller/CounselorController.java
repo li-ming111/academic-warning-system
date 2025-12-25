@@ -58,7 +58,6 @@ public class CounselorController {
             user.setRole(4); // 辅导员角色
 
             CounselorProfile profile = new CounselorProfile();
-            profile.setName(name);
             profile.setCollegeId(collegeId);
 
             Long userId = counselorService.registerCounselor(user, profile);
@@ -348,6 +347,33 @@ public class CounselorController {
             return ApiResponse.success(classes);
         } catch (Exception e) {
             log.error("获取班级列表失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取班级活动
+     */
+    @GetMapping("/classes/activities")
+    public ApiResponse<List<Map<String, Object>>> getClassActivities(@RequestParam Long counselorId) {
+        try {
+            java.util.List<Map<String, Object>> activities = List.of(
+                Map.of(
+                    "id", 1L,
+                    "type", "考试安排",
+                    "title", "2025年春学期期末考试",
+                    "date", "2025-12-20"
+                ),
+                Map.of(
+                    "id", 2L,
+                    "type", "班级活动",
+                    "title", "班级座谈会",
+                    "date", "2025-12-18"
+                )
+            );
+            return ApiResponse.success(activities);
+        } catch (Exception e) {
+            log.error("获取班级活动失败", e);
             return ApiResponse.error(e.getMessage());
         }
     }

@@ -1,14 +1,14 @@
 <template>
-  <div class="admin-permissions">
+  <div class="admin-permissions" style="background-color: #f8f9fa !important; min-height: 100vh;">
     <div class="page-header">
-      <h1>🔐 权限管理</h1>
+      <h1>权限管理</h1>
       <p>灵活的权限角色组合配置</p>
     </div>
 
     <!-- Tab页签 -->
     <el-tabs type="card">
       <!-- 角色管理 -->
-      <el-tab-pane label="👥 角色管理">
+      <el-tab-pane label="角色管理">
         <div class="tab-content">
           <el-card style="margin-bottom: 20px;">
             <template #header>
@@ -46,7 +46,7 @@
       </el-tab-pane>
 
       <!-- 用户权限管理 -->
-      <el-tab-pane label="👤 用户权限">
+      <el-tab-pane label="用户权限">
         <div class="tab-content">
           <el-card>
             <template #header>
@@ -112,7 +112,7 @@
       </el-tab-pane>
 
       <!-- 权限配置 -->
-      <el-tab-pane label="🔑 权限配置">
+      <el-tab-pane label="权限配置">
         <div class="tab-content">
           <el-card>
             <template #header>
@@ -394,6 +394,8 @@ const handlePageSizeChange = () => {
 <style scoped>
 .admin-permissions {
   padding: 20px;
+  background-color: #f8f9fa !important;
+  min-height: 100vh;
 }
 
 .page-header {
@@ -440,5 +442,24 @@ const handlePageSizeChange = () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* 全局样式覆盖 */
+.admin-permissions :deep(.el-card) {
+  border: 1px solid #e9ecef !important;
+}
+.admin-permissions :deep(.el-button--primary) {
+  background-color: #667eea !important;
+  border-color: #667eea !important;
+}
+.admin-permissions :deep(.el-button--primary:hover) {
+  background-color: #5568d3 !important;
+  border-color: #5568d3 !important;
+}
+.admin-permissions :deep(.el-tabs__active-bar) {
+  background-color: #667eea !important;
+}
+.admin-permissions :deep(.el-tabs__item.is-active) {
+  color: #667eea !important;
 }
 </style>

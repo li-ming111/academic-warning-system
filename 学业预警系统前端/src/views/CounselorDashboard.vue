@@ -95,6 +95,7 @@
 import { ref, onMounted } from 'vue'
 import * as echarts from 'echarts'
 import { counselorAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const trendChart = ref(null)
 const counselorStats = ref({
@@ -112,7 +113,7 @@ onMounted(async () => {
 
 const loadDashboard = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     if (!userId) return
     const response = await counselorAPI.getDashboard(userId)
     if (response && response.code === 0) {
@@ -134,14 +135,14 @@ const loadDashboard = async () => {
           series: [
             {
               name: '红色预警',
-              data: [3, 4, 3, 5, 6, counselorStats.value.redWarnings || 0],
+              data: [],
               type: 'line',
               smooth: true,
               itemStyle: { color: '#f56c6c' }
             },
             {
               name: '黄色预警',
-              data: [8, 9, 7, 10, 11, counselorStats.value.yellowWarnings || 0],
+              data: [],
               type: 'line',
               smooth: true,
               itemStyle: { color: '#e6a23c' }

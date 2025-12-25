@@ -134,6 +134,7 @@ CREATE TABLE IF NOT EXISTS communication_logs (
     content TEXT,
     category VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id),
     FOREIGN KEY (student_id) REFERENCES student_profile(id),
     FOREIGN KEY (warning_id) REFERENCES academic_warnings(id)

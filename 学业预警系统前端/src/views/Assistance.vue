@@ -189,7 +189,8 @@ const submitProgressUpdate = async () => {
     await studentAPI.updatePlanProgress(progressForm.value.planId, progressForm.value.percentage)
     ElMessage.success('进度已更新')
     progressDialogVisible.value = false
-    await loadAssistancePlans()
+    const userId = getUserId()
+    await loadAssistancePlans(userId)
   } catch (error) {
     console.error('更新进度失败:', error)
     ElMessage.error('更新进度失败')

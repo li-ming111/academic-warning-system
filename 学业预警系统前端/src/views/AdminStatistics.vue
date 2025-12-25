@@ -10,12 +10,12 @@
         <div class="stat-label">总预警数</div>
       </el-card>
       <el-card class="stat-card">
-        <div class="stat-value">{{ stats.redWarnings || 0 }}</div>
-        <div class="stat-label">红色预警</div>
+        <div class="stat-value">{{ stats.totalTeachers || 0 }}</div>
+        <div class="stat-label">教师总数</div>
       </el-card>
       <el-card class="stat-card">
-        <div class="stat-value">{{ stats.yellowWarnings || 0 }}</div>
-        <div class="stat-label">黄色预警</div>
+        <div class="stat-value">{{ stats.totalCourses || 0 }}</div>
+        <div class="stat-label">课程总数</div>
       </el-card>
     </div>
 
@@ -42,10 +42,15 @@ import { ElMessage } from 'element-plus'
 
 const chartContainer = ref(null)
 const stats = ref({
-  totalStudents: 1200,
-  totalWarnings: 98,
-  processedWarnings: 45,
-  assistancePlans: 67
+  totalStudents: 0,
+  totalWarnings: 0,
+  redWarnings: 0,
+  yellowWarnings: 0,
+  totalTeachers: 0,
+  totalColleges: 0,
+  highWarnings: 0,
+  mediumWarnings: 0,
+  lowWarnings: 0
 })
 
 onMounted(async () => {
@@ -55,10 +60,21 @@ onMounted(async () => {
 const loadStatistics = async () => {
   try {
     const response = await adminAPI.getStatistics()
-    if (response && response.code === 0) {
-      stats.value = response.data || {}
-    } else if (response && response.stats) {
-      stats.value = response.stats
+    console.log('统计数据响应:', response)
+    console.log('响应的字段:', Object.keys(response || {}))
+    // 启湇断器已-解包，响应已是data对象
+    if (response && typeof response === 'object') {
+      stats.value = {
+        totalStudents: response.totalStudents || 0,
+        totalWarnings: response.totalWarnings || 0,
+        redWarnings: response.redWarnings || 0,
+        yellowWarnings: response.yellowWarnings || 0,
+        totalTeachers: response.totalTeachers || 0,
+        totalColleges: response.totalColleges || 0,
+        highWarnings: response.highWarnings || response.redWarnings || 0,
+        mediumWarnings: response.mediumWarnings || response.yellowWarnings || 0,
+        lowWarnings: response.lowWarnings || 0
+      }
     }
     initChart()
   } catch (error) {
@@ -106,11 +122,12 @@ const exportStats = async (type) => {
 }
 .stat-card {
   text-align: center;
+  border: 1px solid #e9ecef !important;
 }
 .stat-value {
   font-size: 32px;
   font-weight: bold;
-  color: #409eff;
+  color: #667eea;
 }
 .stat-label {
   font-size: 14px;

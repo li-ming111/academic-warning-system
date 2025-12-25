@@ -260,8 +260,8 @@ const activePlans = computed(() => {
 
 onMounted(async () => {
   const userInfo = JSON.parse(localStorage.getItem('user') || '{}')
-  userId.value = userInfo.userId || userInfo.id
-  studentId.value = userInfo.studentId
+  userId.value = localStorage.getItem('userId') || userInfo.userId || userInfo.id
+  studentId.value = localStorage.getItem('studentId') || userInfo.studentId
 
   await loadAssistancePlans()
   await loadEvaluations()
@@ -271,7 +271,7 @@ onMounted(async () => {
 async function loadAssistancePlans() {
   try {
     const response = await studentAPI.getAssistancePlans(userId.value)
-    if (response.data.success) {
+    if (response.data?.code === 200) {
       assistancePlans.value = response.data.data || []
     }
   } catch (error) {
@@ -282,7 +282,7 @@ async function loadAssistancePlans() {
 async function loadEvaluations() {
   try {
     const response = await studentAPI.getStudentEvaluations(studentId.value)
-    if (response.data.success) {
+    if (response.data?.code === 200) {
       evaluations.value = response.data.data || []
     }
   } catch (error) {
@@ -294,7 +294,7 @@ async function loadEvaluations() {
 async function loadStatistics() {
   try {
     const response = await studentAPI.getEvaluationStatistics(studentId.value)
-    if (response.data.success) {
+    if (response.data?.code === 200) {
       statistics.value = response.data.data || {}
     }
   } catch (error) {

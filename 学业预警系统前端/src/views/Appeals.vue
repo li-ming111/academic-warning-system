@@ -145,6 +145,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { studentAPI } from '../api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const appeals = ref([])
 const submitDialogVisible = ref(false)
@@ -190,7 +191,7 @@ const formatDate = (dateString) => {
 
 const loadAppeals = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     if (!userId) {
       ElMessage.error('请先登录')
       return
@@ -233,6 +234,7 @@ const submitAppeal = async () => {
     const result = await studentAPI.submitAppeal(appealForm.value)
     ElMessage.success('申诉已提交')
     submitDialogVisible.value = false
+    const userId = getUserId()
     await loadAppeals()
   } catch (error) {
     console.error('提交申诉失败:', error)

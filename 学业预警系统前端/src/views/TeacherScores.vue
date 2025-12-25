@@ -82,6 +82,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { teacherAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const selectedCourse = ref('')
 const editDialogVisible = ref(false)
@@ -97,7 +98,7 @@ onMounted(async () => {
 // 加载课程列表
 const loadCourses = async () => {
   try {
-    const teacherId = localStorage.getItem('teacherId') || localStorage.getItem('userId')
+    const teacherId = localStorage.getItem('teacherId') || getUserId()
     if (!teacherId) return
     const response = await teacherAPI.getCourses(teacherId)
     if (Array.isArray(response)) {
@@ -135,7 +136,7 @@ const submitEdit = async () => {
       ElMessage.error('请填写修改原因')
       return
     }
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     const data = {
       regularScore: editingScore.value.regularScore,
       finalScore: editingScore.value.finalScore,
@@ -154,7 +155,7 @@ const submitEdit = async () => {
 
 const saveScores = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     if (!selectedCourse.value) {
       ElMessage.error('请先选择课程')
       return

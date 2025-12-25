@@ -85,6 +85,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { counselorAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const handleDialogVisible = ref(false)
 const warningsList = ref([])
@@ -108,7 +109,7 @@ onMounted(async () => {
 
 const loadWarnings = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     const counselorId = localStorage.getItem('counselorId') || userId
     if (!counselorId) return
     const response = await counselorAPI.getWarnings(counselorId)

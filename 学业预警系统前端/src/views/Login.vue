@@ -3,7 +3,7 @@
     <div class="login-wrapper">
       <div class="login-card">
         <div class="login-header">
-          <div class="logo-icon">📚</div>
+          <div class="logo-icon"></div>
           <h1>学业预警系统</h1>
           <p>智能学业预警与帮扶平台</p>
         </div>
@@ -140,6 +140,13 @@ const handleLogin = async () => {
       localStorage.setItem('userId', response.userId)
       localStorage.setItem('username', response.username)
       localStorage.setItem('role', response.role)
+      // 保存用户姓名（name）
+      if (response.name) {
+        localStorage.setItem('userName', response.name)
+      } else {
+        // 如果后端没有返回 name，使用 username 作为默认值
+        localStorage.setItem('userName', response.username || '')
+      }
       // 保存不同角色的profile ID
       if (response.studentId) localStorage.setItem('studentId', response.studentId)
       if (response.teacherId) localStorage.setItem('teacherId', response.teacherId)

@@ -124,9 +124,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { counselorAPI } from '@/api/index'
-import { ElMessage } from 'element-plus'
+import { getUserId } from '@/utils/userUtils'
 
 const monitor = ref({})
 const insufficientStudents = ref([])
@@ -144,9 +144,8 @@ onMounted(async () => {
 
 // 加载学分监控数据
 const loadCreditMonitor = async () => {
-  loading.value = true
   try {
-    const counselorId = localStorage.getItem('counselorId') || localStorage.getItem('userId')
+    const counselorId = localStorage.getItem('counselorId') || getUserId()
     if (!counselorId) return
     
     try {
@@ -164,15 +163,15 @@ const loadCreditMonitor = async () => {
         insufficientRate: 11.1
       }
     }
-  } finally {
-    loading.value = false
+  } catch (error) {
+    console.error('加载学分监控数据失败:', error)
   }
 }
 
 // 加载学分不足学生
 const loadInsufficientStudents = async () => {
   try {
-    const counselorId = localStorage.getItem('counselorId') || localStorage.getItem('userId')
+    const counselorId = localStorage.getItem('counselorId') || getUserId()
     if (!counselorId) return
     
     try {
@@ -182,13 +181,10 @@ const loadInsufficientStudents = async () => {
         totalInsufficientStudents.value = response.length
       }
     } catch (error) {
-      // 后端接口不可用，使用默认数据
-      console.warn('学分不足API不可用，使用默认数据')
-      insufficientStudents.value = [
-        { id: 1, name: '张三', studentId: '2023001', major: '计算機科学', credits: 6, goal: 8 },
-        { id: 2, name: '李四', studentId: '2023002', major: '计算機科学', credits: 4, goal: 8 }
-      ]
-      totalInsufficientStudents.value = 2
+      // 后端接口不可用
+      console.error('学分不足API不可用:', error)
+      insufficientStudents.value = []
+      totalInsufficientStudents.value = 0
     }
   } catch (error) {
     console.error('加载学分不足学生失败:', error)

@@ -98,6 +98,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { teacherAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 import { ElMessage } from 'element-plus'
 
 const scoreLogs = ref([])
@@ -134,7 +135,7 @@ onMounted(async () => {
 const loadScoreLogs = async () => {
   loading.value = true
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     const teacherId = localStorage.getItem('teacherId') || userId
     if (!teacherId) return
     

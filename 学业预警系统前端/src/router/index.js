@@ -13,6 +13,7 @@ import NotificationCenter from '../views/student/NotificationCenter.vue'
 import BenchmarkAnalysis from '../views/student/BenchmarkAnalysis.vue'
 import AppealManagement from '../views/student/AppealManagement.vue'
 import AssistanceFeedback from '../views/student/AssistanceFeedback.vue'
+import StudentLayout from '../views/StudentLayout.vue'
 import TeacherDashboard from '../views/TeacherDashboard.vue'
 import TeacherRegister from '../views/TeacherRegister.vue'
 import TeacherScores from '../views/TeacherScores.vue'
@@ -23,6 +24,7 @@ import TeacherAuditLog from '../views/TeacherAuditLog.vue'
 import TeacherFeedbackManagement from '../views/TeacherFeedbackManagement.vue'
 import TeacherFeedback from '../views/TeacherFeedback.vue'
 import TeacherCourses from '../views/TeacherCourses.vue'
+import TeacherClassManagement from '../views/TeacherClassManagement.vue'
 import CounselorDashboard from '../views/CounselorDashboard.vue'
 import CounselorRegister from '../views/CounselorRegister.vue'
 import CounselorStudents from '../views/CounselorStudents.vue'
@@ -42,6 +44,8 @@ import AdminCourses from '../views/AdminCourses.vue'
 import AdminPermissions from '../views/AdminPermissions.vue'
 import AdminMessages from '../views/AdminMessages.vue'
 import AdminDataExport from '../views/AdminDataExport.vue'
+import AdminClassManagement from '../views/AdminClassManagement.vue'
+import AdminSettings from '../views/AdminSettings.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import TeacherLayout from '../views/TeacherLayout.vue'
 import AdminLayout from '../views/AdminLayout.vue'
@@ -60,76 +64,65 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/student',
+    component: StudentLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'dashboard',
+        component: Dashboard,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'scores',
+        component: Scores,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'warnings',
+        component: Warnings,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'assistance',
+        component: Assistance,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'appeals',
+        component: Appeals,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'messages',
+        component: Messages,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'notification-center',
+        component: NotificationCenter,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'benchmark-analysis',
+        component: BenchmarkAnalysis,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'assistance-feedback',
+        component: AssistanceFeedback,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings',
+        component: Settings,
+        meta: { requiresAuth: true }
+      }
+    ]
+  },
+  {
     path: '/dashboard',
-    name: 'Dashboard',
-    component: Dashboard,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/scores',
-    name: 'Scores',
-    component: Scores,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/warnings',
-    name: 'Warnings',
-    component: Warnings,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/assistance',
-    name: 'Assistance',
-    component: Assistance,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/appeals',
-    name: 'Appeals',
-    component: Appeals,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/messages',
-    name: 'Messages',
-    component: Messages,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/settings',
-    name: 'Settings',
-    component: Settings,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/statistics',
-    name: 'Statistics',
-    component: Statistics,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/notification-center',
-    name: 'NotificationCenter',
-    component: NotificationCenter,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/benchmark-analysis',
-    name: 'BenchmarkAnalysis',
-    component: BenchmarkAnalysis,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/appeal-management',
-    name: 'AppealManagement',
-    component: AppealManagement,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/assistance-feedback',
-    name: 'AssistanceFeedback',
-    component: AssistanceFeedback,
-    meta: { requiresAuth: true }
+    redirect: '/student/dashboard'
   },
   {
     path: '/counselor-register',
@@ -150,56 +143,113 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/teacher',
+    component: TeacherLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'TeacherDashboard',
+        component: TeacherDashboard
+      },
+      {
+        path: 'scores',
+        name: 'TeacherScores',
+        component: TeacherScores
+      },
+      {
+        path: 'warnings',
+        name: 'TeacherWarnings',
+        component: TeacherWarnings
+      },
+      {
+        path: 'analysis',
+        name: 'TeacherAnalysis',
+        component: TeacherAnalysis
+      },
+      {
+        path: 'credit-prediction',
+        name: 'TeacherCreditPrediction',
+        component: TeacherCreditPrediction
+      },
+      {
+        path: 'audit-log',
+        name: 'TeacherAuditLog',
+        component: TeacherAuditLog
+      },
+      {
+        path: 'feedback-management',
+        name: 'TeacherFeedbackManagement',
+        component: TeacherFeedbackManagement
+      },
+      {
+        path: 'feedback',
+        name: 'TeacherFeedback',
+        component: TeacherFeedback
+      },
+      {
+        path: 'courses',
+        name: 'TeacherCourses',
+        component: TeacherCourses
+      },
+      {
+        path: 'class-management',
+        name: 'TeacherClassManagement',
+        component: TeacherClassManagement
+      }
+    ]
+  },
+  {
     path: '/teacher-dashboard',
-    name: 'TeacherDashboard',
+    name: 'TeacherDashboardLegacy',
     component: TeacherDashboard,
     meta: { requiresAuth: true }
   },
   {
     path: '/teacher-scores',
-    name: 'TeacherScores',
+    name: 'TeacherScoresLegacy',
     component: TeacherScores,
     meta: { requiresAuth: true }
   },
   {
     path: '/teacher-warnings',
-    name: 'TeacherWarnings',
+    name: 'TeacherWarningsLegacy',
     component: TeacherWarnings,
     meta: { requiresAuth: true }
   },
   {
     path: '/teacher-analysis',
-    name: 'TeacherAnalysis',
+    name: 'TeacherAnalysisLegacy',
     component: TeacherAnalysis,
     meta: { requiresAuth: true }
   },
   {
     path: '/teacher-credit-prediction',
-    name: 'TeacherCreditPrediction',
+    name: 'TeacherCreditPredictionLegacy',
     component: TeacherCreditPrediction,
     meta: { requiresAuth: true }
   },
   {
     path: '/teacher-audit-log',
-    name: 'TeacherAuditLog',
+    name: 'TeacherAuditLogLegacy',
     component: TeacherAuditLog,
     meta: { requiresAuth: true }
   },
   {
     path: '/teacher-feedback-management',
-    name: 'TeacherFeedbackManagement',
+    name: 'TeacherFeedbackManagementLegacy',
     component: TeacherFeedbackManagement,
     meta: { requiresAuth: true }
   },
   {
     path: '/teacher-feedback',
-    name: 'TeacherFeedback',
+    name: 'TeacherFeedbackLegacy',
     component: TeacherFeedback,
     meta: { requiresAuth: true }
   },
   {
     path: '/teacher-courses',
-    name: 'TeacherCourses',
+    name: 'TeacherCoursesLegacy',
     component: TeacherCourses,
     meta: { requiresAuth: true }
   },
@@ -305,6 +355,16 @@ const routes = [
         path: 'data-export',
         name: 'AdminDataExport',
         component: AdminDataExport
+      },
+      {
+        path: 'class-management',
+        name: 'AdminClassManagement',
+        component: AdminClassManagement
+      },
+      {
+        path: 'settings',
+        name: 'AdminSettings',
+        component: AdminSettings
       }
     ]
   },
@@ -318,7 +378,23 @@ const routes = [
   },
   {
     path: '/',
-    redirect: '/login'
+    redirect: (to) => {
+      const hasToken = localStorage.getItem('token')
+      if (!hasToken) {
+        return '/login'
+      }
+      // 如果已登录，根据角色跳转
+      const role = localStorage.getItem('role')
+      if (role === '2' || role === 'teacher') {
+        return '/teacher/dashboard'
+      } else if (role === '4' || role === 'counselor') {
+        return '/counselor-dashboard'
+      } else if (role === '3' || role === 'admin') {
+        return '/admin/dashboard'
+      } else {
+        return '/student/dashboard'
+      }
+    }
   }
 ]
 
@@ -348,7 +424,7 @@ router.beforeEach((to, from, next) => {
       next('/admin/dashboard')
     } else {
       // 默认学生
-      next('/dashboard')
+      next('/student/dashboard')
     }
     return
   }

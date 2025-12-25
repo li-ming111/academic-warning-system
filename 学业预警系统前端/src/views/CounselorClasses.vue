@@ -86,9 +86,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import * as echarts from 'echarts'
-import { ElMessage } from 'element-plus'
 import { counselorAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const classList = ref([])
 const selectedClass = ref(null)
@@ -106,7 +105,7 @@ onMounted(() => {
 
 const loadClasses = async () => {
   try {
-    const counselorId = localStorage.getItem('counselorId') || localStorage.getItem('userId')
+    const counselorId = localStorage.getItem('counselorId') || getUserId()
     if (!counselorId) return
     
     // 获取班级列表

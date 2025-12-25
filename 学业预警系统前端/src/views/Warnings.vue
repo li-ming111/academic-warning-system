@@ -1,4 +1,4 @@
-<template>
+ <template>
   <div class="warnings-container">
     <!-- 预警统计 -->
     <div class="warning-stats">

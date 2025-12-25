@@ -131,6 +131,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { teacherAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const handleDialogVisible = ref(false)
 const detailDialogVisible = ref(false)
@@ -169,7 +170,7 @@ onMounted(async () => {
 // 加载预警数据
 const loadWarnings = async () => {
   try {
-    const teacherId = localStorage.getItem('teacherId') || localStorage.getItem('userId')
+    const teacherId = localStorage.getItem('teacherId') || getUserId()
     if (!teacherId) return
     const response = await teacherAPI.getWarnings(teacherId)
     if (response && Array.isArray(response)) {
@@ -223,7 +224,7 @@ const submitHandle = async () => {
       return
     }
     
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     
     // 保存沟通记录
     if (handleForm.value.communication) {

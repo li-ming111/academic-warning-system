@@ -21,10 +21,15 @@ public class AcademicWarning extends BaseEntity {
 
     private String warningLevel;  // red/yellow/blue
 
+    private String title;  // 预警标题
+
     private String description;
 
     private String status;  // pending, confirmed, processed, closed
 
     private String appealStatus;  // none, pending, under_appeal, resolved, rejected
+
+    @TableField(exist = false)
+    private String courseName;  // 课程名称（不存储到数据库）
 
 }

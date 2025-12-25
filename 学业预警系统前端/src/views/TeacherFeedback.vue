@@ -103,6 +103,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { teacherAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const filterCategory = ref('all')
 const filterStatus = ref('all')
@@ -130,7 +131,7 @@ onMounted(async () => {
 // 加载反馈数据
 const loadFeedback = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     if (!userId) return
     const response = await teacherAPI.getFeedback(userId)
     if (response) {

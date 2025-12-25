@@ -1,0 +1,1 @@
+SELECT COUNT(*) FROM user WHERE role = 1;

@@ -1,14 +1,14 @@
 <template>
-  <div class="admin-colleges">
+  <div class="admin-colleges" style="background-color: #f8f9fa !important; min-height: 100vh;">
     <div class="page-header">
-      <h1>🏫 学院管理</h1>
+      <h1>学院管理</h1>
       <p>学院CRUD操作和数据管理</p>
     </div>
 
     <!-- 操作按钮 -->
     <div class="action-bar">
-      <el-button type="primary" @click="addCollegDialogVisible = true">➕ 添加学院</el-button>
-      <el-button @click="exportColleges">📥 导出</el-button>
+      <el-button type="primary" @click="addCollegDialogVisible = true">添加学院</el-button>
+      <el-button @click="exportColleges">导出</el-button>
     </div>
 
     <!-- 学院列表 -->
@@ -43,6 +43,19 @@
         <el-button type="primary" @click="submitAddCollege">确认</el-button>
       </template>
     </el-dialog>
+
+    <!-- 编辑对话框 -->
+    <el-dialog v-model="editCollegDialogVisible" title="编辑学院" width="500px">
+      <el-form :model="editingCollege" label-width="100px">
+        <el-form-item label="学院名称">
+          <el-input v-model="editingCollege.name" placeholder="请输入学院名称"></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editCollegDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitEditCollege">确认</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -52,9 +65,15 @@ import { ElMessage } from 'element-plus'
 import { adminAPI } from '@/api/index'
 
 const addCollegDialogVisible = ref(false)
+const editCollegDialogVisible = ref(false)
 const collegeList = ref([])
 
 const collegeForm = ref({
+  name: ''
+})
+
+const editingCollege = ref({
+  id: null,
   name: ''
 })
 
@@ -76,16 +95,39 @@ const loadColleges = async () => {
 }
 
 const editCollege = (row) => {
-  ElMessage.info(`编辑${row.name}`)
+  editingCollege.value = { ...row }
+  editCollegDialogVisible.value = true
+}
+
+const submitEditCollege = async () => {
+  if (!editingCollege.value.name) {
+    ElMessage.error('请输入学院名称')
+    return
+  }
+  try {
+    await adminAPI.updateCollege(editingCollege.value.id, { name: editingCollege.value.name })
+    ElMessage.success('学院已更新')
+    editCollegDialogVisible.value = false
+    // 直接更新列表中的数据
+    const index = collegeList.value.findIndex(item => item.id === editingCollege.value.id)
+    if (index !== -1) {
+      collegeList.value[index].name = editingCollege.value.name
+    }
+  } catch (error) {
+    console.error('更新学院失败:', error)
+    ElMessage.error('更新失败')
+  }
 }
 
 const deleteCollege = async (row) => {
   try {
     await adminAPI.deleteCollege(row.id)
     ElMessage.success('学院已删除')
-    await loadColleges()
+    // 直接从列表中移除该行
+    collegeList.value = collegeList.value.filter(item => item.id !== row.id)
   } catch (error) {
     console.error('删除学院失败:', error)
+    ElMessage.error('删除失败')
   }
 }
 
@@ -120,6 +162,8 @@ const exportColleges = async () => {
 <style scoped>
 .admin-colleges {
   padding: 20px;
+  background-color: #f8f9fa !important;
+  min-height: 100vh;
 }
 
 .page-header {
@@ -148,5 +192,20 @@ const exportColleges = async () => {
   font-size: 16px;
   font-weight: bold;
   color: #333;
+}
+
+/* 全局样式覆盖 */
+.admin-colleges :deep(.el-card) {
+  border: 1px solid #e9ecef !important;
+}
+
+.admin-colleges :deep(.el-button--primary) {
+  background-color: #667eea !important;
+  border-color: #667eea !important;
+}
+
+.admin-colleges :deep(.el-button--primary:hover) {
+  background-color: #5568d3 !important;
+  border-color: #5568d3 !important;
 }
 </style>

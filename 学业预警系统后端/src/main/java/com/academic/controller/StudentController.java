@@ -31,7 +31,9 @@ import com.academic.entity.Notification;
 import com.academic.entity.SubscriptionPreference;
 import com.academic.entity.BenchmarkAnalysis;
 import com.academic.entity.AssistanceEvaluation;
+import com.academic.entity.Course;
 import com.academic.mapper.CourseMapper;
+import com.academic.util.StudentIdParser;
 import lombok.extern.slf4j.Slf4j;
 import java.util.Map;
 import java.util.HashMap;
@@ -117,6 +119,23 @@ public class StudentController {
     }
 
     /**
+     * 根据userId获取学生信息
+     */
+    @GetMapping("/student-by-user/{userId}")
+    public ApiResponse<StudentProfile> getStudentInfoByUserId(@PathVariable Long userId) {
+        try {
+            StudentProfile student = studentService.getByUserId(userId);
+            if (student == null) {
+                return ApiResponse.error(404, "学生不存在");
+            }
+            return ApiResponse.success(student);
+        } catch (Exception e) {
+            log.error("根据userId获取学生信息失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
      * 获取学生GPA
      */
     @GetMapping("/{studentId}/gpa")
@@ -160,7 +179,8 @@ public class StudentController {
             }
 
             StudentDashboardResponse dashboard = new StudentDashboardResponse();
-            String currentSemester = "2024-2025春"; // 当前学期，可从配置读取
+            // 计算当前学期
+            String currentSemester = calculateCurrentSemester();
 
             // 本学期课程数
             try {
@@ -182,6 +202,8 @@ public class StudentController {
 
             // 预警统计
             try {
+                // 先生成当前学期的预警
+                warningService.generateWarningsByFailedCount(student.getId(), currentSemester);
                 Long warningCount = warningService.countWarnings(student.getId());
                 dashboard.setWarningCount(warningCount != null ? warningCount : 0L);
                 Long redWarnings = warningService.countWarningsByLevel(student.getId(), "high");
@@ -233,7 +255,9 @@ public class StudentController {
             
             List<Score> scores = scoreService.getStudentScores(student.getId(), semester);
             log.info("查询到 {} 条成绩", scores.size());
-            List<ScoreResponse> responses = scores.stream().map(score -> {
+            List<ScoreResponse> responses = new java.util.ArrayList<>();
+            
+            for (Score score : scores) {
                 ScoreResponse response = new ScoreResponse();
                 response.setId(score.getId());
                 response.setScoreTotal(score.getScoreTotal());
@@ -241,20 +265,27 @@ public class StudentController {
                 response.setSemester(score.getSemester());
                 response.setCreatedAt(score.getCreatedAt());
 
-                // 查询课程信息
+                // 直接从 Score 对象获取 courseId，用 SQL 查询课程名称和学分
                 if (score.getCourseId() != null) {
                     try {
-                        var course = courseMapper.selectById(score.getCourseId());
-                        if (course != null) {
-                            response.setCourseName(course.getName());
-                            response.setCredits(course.getCredits());
+                        // 调用 Service 方法通过 SQL 查询课程信息
+                        var courseInfo = scoreService.getCourseInfo(score.getCourseId());
+                        if (courseInfo != null) {
+                            response.setCourseName((String) courseInfo.get("name"));
+                            Object credits = courseInfo.get("credits");
+                            if (credits != null) {
+                                response.setCredits(new java.math.BigDecimal(credits.toString()));
+                            }
+                            log.debug("成绩ID={}, 课程ID={}, 课程名={}, 学分={}", score.getId(), score.getCourseId(), courseInfo.get("name"), courseInfo.get("credits"));
+                        } else {
+                            log.warn("课程不存在: courseId={}", score.getCourseId());
                         }
                     } catch (Exception e) {
-                        log.warn("查询课程信息失败: courseId={}", score.getCourseId(), e);
+                        log.error("查询课程信息失败: courseId={}", score.getCourseId(), e);
                     }
                 }
-                return response;
-            }).collect(Collectors.toList());
+                responses.add(response);
+            }
 
             return ApiResponse.success(responses);
         } catch (Exception e) {
@@ -1070,6 +1101,83 @@ public class StudentController {
             return ApiResponse.success(stats);
         } catch (Exception e) {
             log.error("获取评价统计失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 计算当前学期
+     * 格式: YYYY-YYYY-1 (秋季) 或 YYYY-YYYY-2 (春季)
+     * 每年9月到次年2月为秋季（第1学期）
+     * 每年3月到8月为春季（第2学期）
+     */
+    private String calculateCurrentSemester() {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        int year = today.getYear();
+        int month = today.getMonthValue();
+        
+        if (month >= 9) {
+            // 9月到12月，当前是秋季
+            return year + "-" + (year + 1) + "-1";
+        } else {
+            // 1月到8月，上一年的秋季还在进行或者是春季
+            if (month >= 3) {
+                // 3月到8月，春季
+                return (year - 1) + "-" + year + "-2";
+            } else {
+                // 1月到2月，上一年秋季到春季
+                return (year - 1) + "-" + year + "-2";
+            }
+        }
+    }
+
+    /**
+     * 根据学号获取班级信息
+     * 根据StudentIdParser解析学号中的班级编码，返回对应的班级信息
+     */
+    @GetMapping("/{studentId}/class-info")
+    public ApiResponse<Map<String, Object>> getClassInfo(@PathVariable String studentId) {
+        try {
+            // 解析学号
+            StudentIdParser.StudentIdInfo idInfo = StudentIdParser.parseStudentId(studentId);
+            if (!idInfo.getValid()) {
+                return ApiResponse.error("学号格式无效：" + idInfo.getErrorMessage());
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("studentId", studentId);
+            result.put("enrollmentYear", idInfo.getEnrollmentYear());
+            result.put("majorCode", idInfo.getMajorCode());
+            result.put("classCode", idInfo.getClassCode());
+            result.put("rankInClass", idInfo.getRankInClass());
+
+            // 生成班级标识
+            String classIdentifier = idInfo.getEnrollmentYear() + "级" + 
+                                   "专业" + idInfo.getMajorCode() + "班" + 
+                                   idInfo.getClassCode();
+            result.put("classIdentifier", classIdentifier);
+
+            // 尝试从数据库获取班级详情
+            StudentProfile student = studentService.getByStudentId(studentId);
+            if (student != null && student.getClassId() != null) {
+                result.put("classId", student.getClassId());
+                
+                // 尝试获取完整班级信息
+                try {
+                    com.academic.entity.Class clazz = new com.academic.entity.Class();
+                    clazz.setId(student.getClassId());
+                    // 这里需要通过服务获取班级信息
+                    result.put("classDetails", clazz);
+                } catch (Exception e) {
+                    log.warn("获取班级详情失败", e);
+                }
+            }
+
+            log.info("成功解析学号班级信息: {}", studentId);
+            return ApiResponse.success(result);
+
+        } catch (Exception e) {
+            log.error("获取班级信息失败", e);
             return ApiResponse.error(e.getMessage());
         }
     }

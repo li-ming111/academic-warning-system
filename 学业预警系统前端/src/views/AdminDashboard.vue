@@ -3,7 +3,6 @@
     <!-- 欢迎卡片 -->
     <div class="welcome-card">
       <div class="welcome-content">
-        <div class="greeting-icon">🎯</div>
         <h1>管理员仪表盘</h1>
         <p>全校数据统计、预警分析和系统监控中心</p>
       </div>
@@ -14,7 +13,6 @@
     <div class="metrics-section">
       <div class="metric-card blue">
         <div class="metric-header">
-          <span class="metric-icon">👥</span>
           <span class="metric-title">全校学生</span>
         </div>
         <div class="metric-value">{{ stats.studentCount || '-' }}</div>
@@ -22,7 +20,6 @@
       </div>
       <div class="metric-card green">
         <div class="metric-header">
-          <span class="metric-icon">📚</span>
           <span class="metric-title">开设课程</span>
         </div>
         <div class="metric-value">{{ stats.courseCount || '-' }}</div>
@@ -30,7 +27,6 @@
       </div>
       <div class="metric-card red">
         <div class="metric-header">
-          <span class="metric-icon">🔴</span>
           <span class="metric-title">红色预警</span>
         </div>
         <div class="metric-value">{{ stats.redWarnings || 0 }}</div>
@@ -38,7 +34,6 @@
       </div>
       <div class="metric-card purple">
         <div class="metric-header">
-          <span class="metric-icon">✅</span>
           <span class="metric-title">系统用户</span>
         </div>
         <div class="metric-value">{{ stats.userCount || '-' }}</div>
@@ -52,105 +47,59 @@
         <h3>预警等级分布</h3>
         <div class="warning-distribution">
           <div class="warning-item">
-            <span class="warning-label">🔴 红色预警</span>
-            <div class="warning-bar" style="background: #f56c6c; width: 45%"></div>
-            <span class="warning-count">{{ stats.redWarnings || 0 }}</span>
+            <span class="warning-label">红色预警</span>
+            <div class="warning-bar" style="background: #667eea; width: 45%"></div>
+            <span class="warning-count">{{ stats.redWarnings !== null ? stats.redWarnings : '-' }}</span>
           </div>
           <div class="warning-item">
-            <span class="warning-label">🟡 黄色预警</span>
-            <div class="warning-bar" style="background: #e6a23c; width: 30%"></div>
-            <span class="warning-count">{{ stats.yellowWarnings || 0 }}</span>
+            <span class="warning-label">黄色预警</span>
+            <div class="warning-bar" style="background: #667eea; width: 30%"></div>
+            <span class="warning-count">{{ stats.yellowWarnings !== null ? stats.yellowWarnings : '-' }}</span>
           </div>
           <div class="warning-item">
-            <span class="warning-label">🔵 蓝色预警</span>
-            <div class="warning-bar" style="background: #409eff; width: 25%"></div>
-            <span class="warning-count">{{ stats.blueWarnings || 0 }}</span>
+            <span class="warning-label">蓝色预警</span>
+            <div class="warning-bar" style="background: #667eea; width: 25%"></div>
+            <span class="warning-count">{{ stats.blueWarnings !== null ? stats.blueWarnings : '-' }}</span>
           </div>
         </div>
       </div>
 
       <div class="chart-card">
-        <h3>实时在线统计</h3>
-        <div class="online-stats">
-          <div class="online-item">
-            <div class="online-icon">👨‍🏫</div>
-            <div class="online-info">
-              <div class="online-label">在线教师</div>
-              <div class="online-number">{{ todayStats.onlineTeachers || 32 }}</div>
-            </div>
-          </div>
-          <div class="online-item">
-            <div class="online-icon">👤</div>
-            <div class="online-info">
-              <div class="online-label">在线学生</div>
-              <div class="online-number">{{ todayStats.onlineStudents || 180 }}</div>
-            </div>
-          </div>
-          <div class="online-item">
-            <div class="online-icon">🌐</div>
-            <div class="online-info">
-              <div class="online-label">系统在线</div>
-              <div class="online-number">{{ (todayStats.onlineTeachers || 0) + (todayStats.onlineStudents || 0) }}</div>
+        <h3>最近动态</h3>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-time">实时数据</div>
+            <div class="activity-content">
+              <span class="activity-type notify">提示</span>
+              <span>仪表盘核心数据已关联真实数据库</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 今日数据 -->
-    <div class="today-section">
-      <h2>⚡ 今日数据概览</h2>
-      <div class="today-cards">
-        <div class="today-card new">
-          <div class="today-icon">🆕</div>
-          <div class="today-content">
-            <div class="today-label">新增预警</div>
-            <div class="today-number">{{ todayStats.newWarnings || 5 }}</div>
-          </div>
-        </div>
-        <div class="today-card processed">
-          <div class="today-icon">✅</div>
-          <div class="today-content">
-            <div class="today-label">已处理</div>
-            <div class="today-number">{{ todayStats.processedWarnings || 3 }}</div>
-          </div>
-        </div>
-        <div class="today-card pending">
-          <div class="today-icon">⏳</div>
-          <div class="today-content">
-            <div class="today-label">待处理</div>
-            <div class="today-number">{{ (todayStats.newWarnings || 5) - (todayStats.processedWarnings || 3) }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
+
 
     <!-- 快速操作 -->
     <div class="actions-section">
-      <h2>⚙️ 快速操作</h2>
+      <h2>快速操作</h2>
       <div class="action-grid">
         <router-link to="/admin/colleges" class="action-card">
-          <div class="action-icon">🏫</div>
           <div class="action-name">学院管理</div>
         </router-link>
         <router-link to="/admin/majors" class="action-card">
-          <div class="action-icon">📚</div>
           <div class="action-name">专业管理</div>
         </router-link>
         <router-link to="/admin/users" class="action-card">
-          <div class="action-icon">👥</div>
           <div class="action-name">用户管理</div>
         </router-link>
         <router-link to="/admin/courses" class="action-card">
-          <div class="action-icon">📖</div>
           <div class="action-name">课程管理</div>
         </router-link>
         <router-link to="/admin/rules" class="action-card">
-          <div class="action-icon">⚙️</div>
           <div class="action-name">规则管理</div>
         </router-link>
         <router-link to="/admin/statistics" class="action-card">
-          <div class="action-icon">📊</div>
           <div class="action-name">数据分析</div>
         </router-link>
       </div>
@@ -158,7 +107,7 @@
 
     <!-- 系统动态 -->
     <div class="activity-section">
-      <h2>📢 最近动态</h2>
+      <h2>最近动态</h2>
       <div class="activity-list">
         <div class="activity-item">
           <div class="activity-time">刚刚</div>
@@ -202,10 +151,10 @@ const stats = ref({
   warningCount: 0
 })
 const todayStats = ref({
-  newWarnings: 0,
-  processedWarnings: 0,
-  onlineTeachers: 0,
-  onlineStudents: 0
+  newWarnings: null,
+  processedWarnings: null,
+  onlineTeachers: null,
+  onlineStudents: null
 })
 const currentTime = ref('')
 
@@ -235,11 +184,19 @@ const updateTime = () => {
 
 const loadDashboard = async () => {
   try {
-    const response = await adminAPI.getDashboard()
-    if (response && response.code === 0) {
-      stats.value = response.data || {}
-    } else if (response && response.stats) {
-      stats.value = response.stats
+    const response = await adminAPI.getStatistics()
+    if (response && typeof response === 'object') {
+      stats.value = {
+        studentCount: response.totalStudents || 0,
+        courseCount: response.totalCourses || 0,
+        userCount: response.totalTeachers || 0,
+        redWarnings: response.redWarnings || 0,
+        yellowWarnings: response.yellowWarnings || 0,
+        blueWarnings: response.lowWarnings || 0,
+        warningCount: response.totalWarnings || 0,
+        collegeCount: response.totalColleges || 0,
+        majorCount: 0
+      }
     }
   } catch (error) {
     console.error('加载管理员看板失败:', error)
@@ -249,7 +206,7 @@ const loadDashboard = async () => {
 
 <style scoped>
 .dashboard-wrapper {
-  background: linear-gradient(135deg, #f0f2f5 0%, #e8ecf1 100%);
+  background: linear-gradient(135deg, #f5f7fb 0%, #e8ecf1 100%);
   padding: 30px;
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -331,20 +288,34 @@ const loadDashboard = async () => {
   background: white;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-top: 4px solid #409eff;
+  border: 1px solid #e9ecef;
+  border-top: 4px solid #667eea;
   position: relative;
+  overflow: hidden;
 }
 
-.metric-card.blue { border-top-color: #409eff; }
-.metric-card.green { border-top-color: #67c23a; }
-.metric-card.red { border-top-color: #f56c6c; }
-.metric-card.purple { border-top-color: #9254de; }
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -50px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.metric-card.blue { border-top-color: #667eea; background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(246,248,253,0.5) 100%); }
+.metric-card.green { border-top-color: #667eea; background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(248,251,248,0.5) 100%); }
+.metric-card.red { border-top-color: #667eea; background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(253,246,246,0.5) 100%); }
+.metric-card.purple { border-top-color: #667eea; background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(250,247,253,0.5) 100%); }
 
 .metric-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.15);
+  transform: translateY(-8px);
+  border-top: 4px solid #5568d3;
 }
 
 .metric-header {
@@ -365,10 +336,14 @@ const loadDashboard = async () => {
 }
 
 .metric-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 8px;
+  font-size: 36px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 12px;
+  letter-spacing: -1px;
 }
 
 .metric-detail {
@@ -388,7 +363,13 @@ const loadDashboard = async () => {
   background: white;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.12);
 }
 
 .chart-card h3 {
@@ -470,7 +451,7 @@ const loadDashboard = async () => {
 .online-number {
   font-size: 20px;
   font-weight: 700;
-  color: #409eff;
+  color: #667eea;
 }
 
 /* 今日数据区 */
@@ -500,12 +481,12 @@ const loadDashboard = async () => {
   align-items: center;
   gap: 15px;
   transition: all 0.3s ease;
-  border-left: 4px solid #409eff;
+  border-left: 4px solid #667eea;
 }
 
-.today-card.new { border-left-color: #67c23a; }
-.today-card.processed { border-left-color: #409eff; }
-.today-card.pending { border-left-color: #e6a23c; }
+.today-card.new { border-left-color: #667eea; }
+.today-card.processed { border-left-color: #667eea; }
+.today-card.pending { border-left-color: #667eea; }
 
 .today-card:hover {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
@@ -554,36 +535,61 @@ const loadDashboard = async () => {
 .action-card {
   background: white;
   border-radius: 12px;
-  padding: 20px;
+  padding: 24px;
   text-align: center;
   text-decoration: none;
   color: #333;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid #e9ecef;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.action-card:hover::before {
+  opacity: 1;
 }
 
 .action-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  transform: translateY(-6px);
-  color: #409eff;
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+  transform: translateY(-8px);
+  border-color: #667eea;
+  color: #667eea;
 }
 
 .action-icon {
-  font-size: 32px;
-  transition: transform 0.3s ease;
+  font-size: 36px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  z-index: 1;
 }
 
 .action-card:hover .action-icon {
-  transform: scale(1.2) rotate(5deg);
+  transform: scale(1.3) rotateY(360deg);
 }
 
 .action-name {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
 }
 
 /* 最近动态区 */
@@ -603,11 +609,12 @@ const loadDashboard = async () => {
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  border: 1px solid #e9ecef;
 }
 
 .activity-item {
   padding: 18px 24px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #e9ecef;
   display: flex;
   gap: 16px;
   align-items: flex-start;
@@ -648,17 +655,17 @@ const loadDashboard = async () => {
 }
 
 .activity-type.alert {
-  background: #fef0f0;
-  color: #f56c6c;
+  background: #f0f2f8;
+  color: #667eea;
 }
 
 .activity-type.modify {
-  background: #f0f9ff;
-  color: #409eff;
+  background: #f0f2f8;
+  color: #667eea;
 }
 
 .activity-type.notify {
-  background: #fef7e6;
-  color: #e6a23c;
+  background: #f0f2f8;
+  color: #667eea;
 }
 </style>

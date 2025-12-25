@@ -66,9 +66,6 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
 
 server:
   port: 8081
@@ -79,5 +76,7 @@ logging:
   level:
     root: INFO
     com.academic: DEBUG
+    com.baomidou.mybatisplus: DEBUG
+    org.apache.ibatis.datasource.pooled.PooledDataSource: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

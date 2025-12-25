@@ -1,13 +1,13 @@
 <template>
   <div class="app-wrapper">
-    <!-- 固定侧边栏 - 仅在已登录+非登录/注册页显示 -->
+    <!-- 固定侧边栏 - 仅在已登录+靐登录注册页显示（教师、学生角色使用专用布局，不显示此导航） -->
     <aside 
-      v-if="isLoggedIn && !isPureAuthPage" 
+      v-if="isLoggedIn && !isPureAuthPage && !isTeacher && !isStudent" 
       class="sidebar"
       :class="{ 'sidebar-collapsed': isCollapsed }"
     >
       <div class="sidebar-header">
-        <h2>📚 {{ isAdmin ? '管理系统' : '学业预警' }}</h2>
+        <h2>{{ isAdmin ? '学业预警系统' : '学业预警' }}</h2>
         <button v-if="!isAdmin" class="collapse-btn" @click="isCollapsed = !isCollapsed">
           {{ isCollapsed ? '▶' : '◀' }}
         </button>
@@ -16,123 +16,91 @@
         <!-- 管理员端导航 -->
         <template v-if="isAdmin">
           <router-link to="/admin/dashboard" class="nav-item" active-class="active">
-            <span>📊 仪表盘</span>
+            <span>数据统计</span>
           </router-link>
           <router-link to="/admin/colleges" class="nav-item" active-class="active">
-            <span>🏫 学院管理</span>
+            <span>学院管理</span>
           </router-link>
           <router-link to="/admin/majors" class="nav-item" active-class="active">
-            <span>📚 专业管理</span>
+            <span>专业管理</span>
           </router-link>
           <router-link to="/admin/courses" class="nav-item" active-class="active">
-            <span>📖 课程管理</span>
+            <span>课程管理</span>
           </router-link>
           <router-link to="/admin/users" class="nav-item" active-class="active">
-            <span>👥 用户与权限管理</span>
+            <span>用户管理</span>
           </router-link>
           <router-link to="/admin/rules" class="nav-item" active-class="active">
-            <span>⚙️ 规则管理</span>
+            <span>规则管理</span>
           </router-link>
           <router-link to="/admin/statistics" class="nav-item" active-class="active">
-            <span>📊 数据分析</span>
+            <span>数据分析</span>
           </router-link>
           <router-link to="/admin/messages" class="nav-item" active-class="active">
-            <span>💬 消息通知</span>
+            <span>消息通知</span>
           </router-link>
           <router-link to="/admin/data-export" class="nav-item" active-class="active">
-            <span>📥 数据导出</span>
+            <span>数据导出</span>
+          </router-link>
+          <router-link to="/admin/settings" class="nav-item" active-class="active">
+            <span>个人设置</span>
           </router-link>
         </template>
 
-        <!-- 学生端导航 -->
-        <template v-else-if="isStudent">
-          <router-link 
-            to="/dashboard" 
-            class="nav-item" 
-            active-class="active"
-            exact-active-class="active"
-          >
-            <span>📊 智能看板</span>
-          </router-link>
-          <router-link to="/scores" class="nav-item" active-class="active">
-            <span>📈 成绩与统计</span>
-          </router-link>
-          <router-link to="/warnings" class="nav-item" active-class="active">
-            <span>⚠️ 智能预警提醒</span>
-          </router-link>
-          <router-link to="/assistance" class="nav-item" active-class="active">
-            <span>🤝 帮扶计划追踪</span>
-          </router-link>
-          <router-link to="/notification-center" class="nav-item" active-class="active">
-            <span>🔔 预警通知中心</span>
-          </router-link>
-          <router-link to="/benchmark-analysis" class="nav-item" active-class="active">
-            <span>📊 个人对标分析</span>
-          </router-link>
-          <router-link to="/appeal-management" class="nav-item" active-class="active">
-            <span>📋 成绩申诉管理</span>
-          </router-link>
-          <router-link to="/assistance-feedback" class="nav-item" active-class="active">
-            <span>⭐ 帮扶反馈评价</span>
-          </router-link>
-          <router-link to="/settings" class="nav-item" active-class="active">
-            <span>⚙️ 个人设置</span>
-          </router-link>
-        </template>
-
+        <!-- 学生端使用StudentLayout的左侧菜单，不需要全局导航 -->
         <!-- 教师端导航 -->
         <template v-else-if="isTeacher">
-          <router-link to="/teacher-dashboard" class="nav-item" active-class="active">
-            <span>📊 教师看板</span>
+          <router-link to="/teacher/dashboard" class="nav-item" active-class="active">
+            <span>教师看板</span>
           </router-link>
-          <router-link to="/teacher-scores" class="nav-item" active-class="active">
-            <span>📝 成绩管理</span>
+          <router-link to="/teacher/scores" class="nav-item" active-class="active">
+            <span>成绩管理</span>
           </router-link>
-          <router-link to="/teacher-warnings" class="nav-item" active-class="active">
-            <span>⚠️ 预警管理</span>
+          <router-link to="/teacher/warnings" class="nav-item" active-class="active">
+            <span>预警管理</span>
           </router-link>
-          <router-link to="/teacher-analysis" class="nav-item" active-class="active">
-            <span>📊 班级分析</span>
+          <router-link to="/teacher/analysis" class="nav-item" active-class="active">
+            <span>班级分析</span>
           </router-link>
-          <router-link to="/teacher-feedback" class="nav-item" active-class="active">
-            <span>💬 反馈管理</span>
+          <router-link to="/teacher/feedback" class="nav-item" active-class="active">
+            <span>反馈管理</span>
           </router-link>
-          <router-link to="/teacher-courses" class="nav-item" active-class="active">
-            <span>📚 选修课管理</span>
+          <router-link to="/teacher/courses" class="nav-item" active-class="active">
+            <span>选修课管理</span>
           </router-link>
         </template>
 
         <!-- 辅导员端导航 -->
         <template v-else-if="isCounselor">
           <router-link to="/counselor-dashboard" class="nav-item" active-class="active">
-            <span>👨‍🎓 学生情况概览</span>
+            <span>学生情况概览</span>
           </router-link>
           <router-link to="/counselor/students" class="nav-item" active-class="active">
-            <span>👥 学生管理</span>
+            <span>学生管理</span>
           </router-link>
           <router-link to="/counselor/warnings" class="nav-item" active-class="active">
-            <span>⚠️ 学生预警管理</span>
+            <span>学生预警管理</span>
           </router-link>
           <router-link to="/counselor/courses" class="nav-item" active-class="active">
-            <span>📚 选修课管理</span>
+            <span>选修课管理</span>
           </router-link>
           <router-link to="/counselor/credit-monitor" class="nav-item" active-class="active">
-            <span>📊 学生数据分析</span>
+            <span>学生数据分析</span>
           </router-link>
           <router-link to="/counselor/notifications" class="nav-item" active-class="active">
-            <span>📢 批量通知</span>
+            <span>批量通知</span>
           </router-link>
           <router-link to="/counselor/class-management" class="nav-item" active-class="active">
-            <span>🏫 班级管理</span>
+            <span>班级管理</span>
           </router-link>
           <router-link to="/counselor/settings" class="nav-item" active-class="active">
-            <span>⚙️ 个人设置</span>
+            <span>个人设置</span>
           </router-link>
         </template>
 
         <div class="nav-divider"></div>
         <button @click="handleLogout" class="nav-item logout-btn">
-          <span>🚪 退出登录</span>
+          <span>退出登录</span>
         </button>
       </nav>
     </aside>
@@ -141,33 +109,23 @@
     <div 
       :class="[
         'main-wrapper', 
-        { 'full-wrapper': !isLoggedIn || isPureAuthPage },
-        { 'main-wrapper-collapsed': isLoggedIn && !isPureAuthPage && isCollapsed }
+        { 'full-wrapper': !isLoggedIn || isPureAuthPage || isTeacher || isStudent },
+        { 'main-wrapper-collapsed': isLoggedIn && !isPureAuthPage && !isTeacher && !isStudent && isCollapsed }
       ]"
     >
       <!-- 深部 -->
-      <header v-if="isLoggedIn && !isPureAuthPage" class="app-header" :class="{ 'admin-header': isAdmin }">
-        <div class="header-content">{{ isAdmin ? '📊 学业预警系统 - 管理员端' : '学业预警与帮扶系统' }}</div>
+      <header v-if="isLoggedIn && !isPureAuthPage && !isTeacher && !isStudent" class="app-header" :class="{ 'admin-header': isAdmin }">
+        <div class="header-content">{{ isAdmin ? '学业预警系统 - 管理员端' : '学业预警与帮扶系统' }}</div>
         <div v-if="!isAdmin" class="header-user">
           {{ userName }} | {{ roleLabel }}
         </div>
         <div v-else class="header-user">
-          <el-dropdown @command="handleCommand">
-            <span class="el-dropdown-link">
-              {{ userName }} <el-icon class="el-icon--right"><arrow-down /></el-icon>
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="settings">系统设置</el-dropdown-item>
-                <el-dropdown-item command="logout">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          <span>{{ userName }}</span>
         </div>
       </header>
 
       <!-- 内容区 -->
-      <main class="app-main">
+      <main class="app-main" style="background-color: #f8f9fa !important;">
         <router-view></router-view>
       </main>
     </div>
@@ -179,7 +137,6 @@ import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from './store'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowDown } from '@element-plus/icons-vue'
 import apiClient from './api/client'
 
 // 初始化
@@ -205,7 +162,7 @@ const isPureAuthPage = computed(() => {
 })
 
 // 用户信息
-const userName = computed(() => localStorage.getItem('username') || '未知用户')
+const userName = computed(() => localStorage.getItem('userName') || localStorage.getItem('username') || '未知用户')
 const roleLabel = computed(() => {
   const labels = { 1: '学生', 2: '教师', 3: '管理员', 4: '辅导员' }
   return labels[roleNum.value] || '学生'
@@ -247,21 +204,19 @@ const handleLogout = async () => {
   localStorage.removeItem('user')
   localStorage.removeItem('userId')
   localStorage.removeItem('username')
+  localStorage.removeItem('userName')
+  localStorage.removeItem('email')
+  localStorage.removeItem('phone')
   localStorage.removeItem('role')
+  localStorage.removeItem('adminPreferences')
+  localStorage.removeItem('pageSize')
   userStore.logout()
   isLoggedIn.value = false
   router.push('/login')
   ElMessage.success('已退出登录')
 }
 
-// 管理员下拉菜单处理
-const handleCommand = (command) => {
-  if (command === 'logout') {
-    handleLogout()
-  } else if (command === 'settings') {
-    router.push('/settings')
-  }
-}
+// 管理员下拉菜单处理已移除，个人设置链接已放到左侧导航
 const routeWatcher = router.afterEach(async (to) => {
   if (isPureAuthPage.value) return
   await validateToken()
@@ -270,14 +225,67 @@ const routeWatcher = router.afterEach(async (to) => {
 onMounted(async () => {
   // 初始化验证Token
   await validateToken()
+  // 加载系统偏好
+  loadAdminPreferences()
   console.log('用户role:', userRole.value, 'type:', typeof userRole.value)
 })
+
+// 加载管理员系统偏好
+const loadAdminPreferences = () => {
+  try {
+    const saved = localStorage.getItem('adminPreferences')
+    if (saved) {
+      const prefs = JSON.parse(saved)
+      // 应用主题
+      if (prefs.theme === 'dark') {
+        document.documentElement.style.colorScheme = 'dark'
+        document.body.classList.add('dark-theme')
+        document.body.classList.remove('light-theme')
+      } else {
+        document.documentElement.style.colorScheme = 'light'
+        document.body.classList.add('light-theme')
+        document.body.classList.remove('dark-theme')
+      }
+    }
+  } catch (error) {
+    console.error('加载系统偏好失败:', error)
+  }
+}
 
 onUnmounted(() => {
   // 移除路由监听
   routeWatcher()
 })
 </script>
+
+<style>
+/* 全局样式 - 必须在 scoped 之外 */
+html,
+body,
+#app {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* 主内容区域默认布局 - 不有sidebar */
+.app-wrapper .main-wrapper {
+  margin-left: 0 !important;
+  width: 100% !important;
+  flex: 1 !important;
+}
+
+/* 强制隐藏 App 中的侧边栏 */
+.app-wrapper > aside {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  position: fixed !important;
+  left: -99999px !important;
+}
+</style>
 
 <style scoped>
 * {
@@ -289,24 +297,17 @@ onUnmounted(() => {
 .app-wrapper {
   display: flex;
   height: 100vh;
-  background: #f5f7fa;
+  background: #f8f9fa;
   transition: all 0.3s ease;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
-/* 侧边栏 */
+/* 侧边栏 - App 中的一个隔离规则，不影响 TeacherLayout */
 .sidebar {
-  width: 200px;
-  background: linear-gradient(180deg, #f8f9fc 0%, #f0f3f8 100%);
-  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 1000;
-  overflow-y: auto;
-  transition: width 0.3s ease;
+  display: none !important;
+  width: 0 !important;
 }
 
 .sidebar-collapsed {
@@ -324,14 +325,30 @@ onUnmounted(() => {
 .sidebar-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 24px 16px;
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
-  flex-shrink: 0;
+  padding: 0 14px;
+  height: 64px;
+  min-height: 64px;
+  max-height: 64px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  text-align: center;
+  border-bottom: none;
+  box-shadow: none;
+  flex-shrink: 0;
+  position: relative;
+  overflow: visible;
+  line-height: 1;
+}
+
+.sidebar-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08), transparent);
 }
 
 .collapse-btn {
@@ -351,34 +368,39 @@ onUnmounted(() => {
 }
 
 .sidebar-header h2 {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  margin: 0;
+  line-height: 1;
+  height: 20px;
 }
 
 .sidebar-nav {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 16px 8px;
-  gap: 6px;
+  padding: 6px 4px;
+  gap: 2px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff 0%, #fafafc 100%);
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 12px 16px;
-  margin: 0 4px;
+  justify-content: center;
+  padding: 10px 14px;
+  margin: 0 3px;
   border-radius: 8px;
-  color: #404854;
-  font-size: 14px;
+  color: #555;
+  font-size: 16px;
   font-weight: 500;
   text-decoration: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s ease;
   position: relative;
   cursor: pointer;
   border: none;
@@ -399,9 +421,9 @@ onUnmounted(() => {
 }
 
 .nav-item:hover {
-  background: linear-gradient(90deg, #e6f4ff 0%, #f0f7ff 100%);
-  color: #409eff;
-  transform: translateX(4px);
+  background: rgba(102, 126, 234, 0.08);
+  color: #667eea;
+  transform: translateX(2px);
 }
 
 .nav-item:hover::before {
@@ -409,9 +431,9 @@ onUnmounted(() => {
 }
 
 .nav-item.active {
-  background: linear-gradient(90deg, #409eff 0%, #66b1ff 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  background: linear-gradient(90deg, rgba(102, 126, 234, 0.15) 0%, rgba(102, 126, 234, 0.1) 100%);
+  color: #667eea;
+  box-shadow: inset 0 0 0 1px rgba(102, 126, 234, 0.2);
   font-weight: 600;
 }
 
@@ -422,27 +444,46 @@ onUnmounted(() => {
 
 .nav-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(102, 126, 234, 0.2) 50%, transparent 100%);
-  margin: 12px 0;
+  background: rgba(102, 126, 234, 0.1);
+  margin: 6px 8px;
 }
 
 .logout-btn {
   margin-top: auto;
+  margin-bottom: 8px;
+  padding: 10px 16px !important;
+  margin-left: 3px !important;
+  margin-right: 3px !important;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3) !important;
+}
+
+.logout-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4) !important;
+  background: linear-gradient(135deg, #ff7a7e 0%, #f06478 100%) !important;
+}
+
+.logout-btn:active {
+  transform: translateY(0) !important;
 }
 
 /* 主内容区 */
 .main-wrapper {
   flex: 1;
-  margin-left: 200px;
+  margin-left: 0 !important;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-  transition: margin-left 0.3s ease;
+  overflow: hidden;
 }
 
 .main-wrapper-collapsed {
-  margin-left: 60px;
+  margin-left: 60px !important;
 }
 
 /* 头部 */
@@ -451,13 +492,17 @@ onUnmounted(() => {
   color: white;
   padding: 0 28px;
   height: 64px;
+  min-height: 64px;
+  max-height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.15);
   flex-shrink: 0;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  border-bottom: none;
+  line-height: 1;
 }
 
 .app-header::before {
@@ -477,13 +522,17 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08), transparent);
 }
 
 .header-content {
   font-size: 18px;
   font-weight: bold;
   letter-spacing: 0.5px;
+  line-height: 1;
+  height: 24px;
+  display: flex;
+  align-items: center;
 }
 
 .header-user {
@@ -493,9 +542,19 @@ onUnmounted(() => {
 
 .app-main {
   flex: 1;
-  padding: 16px;
+  padding: 24px 24px 24px 28px;
   overflow-y: auto;
   overflow-x: hidden;
+  background-color: #f8f9fa !important;
+  scroll-behavior: smooth;
+  border-left: none !important;
+  background: linear-gradient(90deg, #f8f9fa 0%, #f5f7fb 100%) !important;
+  position: relative;
+}
+
+.app-main::before {
+  display: none !important;
+  content: none !important;
 }
 
 .full-wrapper {
@@ -510,5 +569,247 @@ onUnmounted(() => {
   flex: 1;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 0;
+}
+</style>
+
+<style>
+/* 全局管理员端样式优化 - 强制覆盖所有scoped样式 */
+
+/* 背景色 - 最高优先级 */
+body,
+html,
+#app,
+.app-wrapper,
+.main-wrapper,
+.app-main {
+  background-color: #f8f9fa !important;
+}
+
+body,
+html {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+  width: 100%;
+}
+
+.app-wrapper {
+  overflow: hidden !important;
+}
+
+.main-wrapper {
+  overflow: hidden !important;
+}
+
+.app-main {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.full-wrapper .app-main {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+/* Element Plus 全局组件样式 */
+.el-card,
+.metric-card,
+.chart-card {
+  border: 1px solid #e9ecef !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+  background-color: white !important;
+}
+
+.el-card__header {
+  border-bottom: 1px solid #e9ecef !important;
+  background-color: white !important;
+}
+
+/* 按钮主色调 - 浅蓝紫色 */
+.el-button--primary,
+.el-button.is-primary {
+  background-color: #667eea !important;
+  border-color: #667eea !important;
+  color: white !important;
+}
+
+.el-button--primary:hover,
+.el-button.is-primary:hover,
+.el-button--primary:focus {
+  background-color: #5568d3 !important;
+  border-color: #5568d3 !important;
+}
+
+.el-button--primary.is-active,
+.el-button--primary:active {
+  background-color: #4a52b8 !important;
+  border-color: #4a52b8 !important;
+}
+
+/* 标签和标记 */
+.el-tabs__active-bar {
+  background-color: #667eea !important;
+}
+
+.el-tabs__item.is-active {
+  color: #667eea !important;
+}
+
+.el-tag {
+  border: 1px solid #e9ecef !important;
+}
+
+/* 表格样式 */
+.el-table,
+.el-table__wrapper {
+  border: 1px solid #e9ecef !important;
+}
+
+.el-table__header th,
+.el-table__header tr {
+  background-color: #f8f9fa !important;
+  border-bottom: 1px solid #e9ecef !important;
+}
+
+.el-table__body tr {
+  border-bottom: 1px solid #e9ecef !important;
+}
+
+.el-table__body td {
+  border-right: 1px solid #e9ecef !important;
+}
+
+/* 输入框 */
+.el-input__wrapper,
+.el-input--large .el-input__wrapper {
+  border: 1px solid #e9ecef !important;
+  background-color: white !important;
+}
+
+.el-input__wrapper:hover,
+.el-input__wrapper.is-focus {
+  border-color: #667eea !important;
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+/* 对话框 */
+.el-dialog {
+  border: 1px solid #e9ecef !important;
+}
+
+.el-dialog__header {
+  border-bottom: 1px solid #e9ecef !important;
+  background-color: white !important;
+}
+
+.el-dialog__body {
+  background-color: white !important;
+}
+
+.el-dialog__footer {
+  border-top: 1px solid #e9ecef !important;
+  background-color: white !important;
+}
+
+/* 分页器 */
+.el-pagination .btn-prev,
+.el-pagination .btn-next,
+.el-pagination .el-pager li {
+  border: 1px solid #e9ecef !important;
+  background-color: white !important;
+}
+
+.el-pagination .btn-prev:hover,
+.el-pagination .btn-next:hover,
+.el-pagination .el-pager li:hover {
+  color: #667eea !important;
+  border-color: #667eea !important;
+}
+
+.el-pagination .el-pager li.active {
+  color: #667eea !important;
+  background-color: #f0f2f8 !important;
+}
+
+/* 选择器和下拉菜单 */
+.el-select__wrapper,
+.el-select .el-input__wrapper {
+  border: 1px solid #e9ecef !important;
+}
+
+.el-select__wrapper:hover,
+.el-select .el-input__wrapper:hover {
+  border-color: #667eea !important;
+}
+
+/* 进度条 */
+.el-progress__bar .el-progress-bar__inner {
+  background-color: #667eea !important;
+}
+
+/* 徽章 */
+.el-badge__content {
+  background-color: #667eea !important;
+}
+
+/* 表单项 */
+.el-form-item__label {
+  color: #333 !important;
+}
+
+/* 统计卡片和指标卡 - 统一浅蓝紫色 */
+.metric-card.blue {
+  border-top-color: #667eea !important;
+}
+
+.metric-card.green {
+  border-top-color: #667eea !important;
+}
+
+.metric-card.red {
+  border-top-color: #667eea !important;
+}
+
+.metric-card.purple {
+  border-top-color: #667eea !important;
+}
+
+.metric-value {
+  color: #667eea !important;
+}
+
+/* 图标颜色统一为浅蓝紫色 */
+.metric-icon,
+.action-icon,
+.online-icon,
+.today-icon {
+  color: #667eea !important;
+}
+
+/* 预警条颜色统一 */
+.warning-bar {
+  background-color: #667eea !important;
+}
+
+/* 活动类型标签统一 */
+.activity-type {
+  background: #f0f2f8 !important;
+  color: #667eea !important;
+}
+
+/* 状态标签统一颜色 */
+.el-tag.el-tag--success,
+.el-tag.el-tag--warning,
+.el-tag.el-tag--danger,
+.el-tag.el-tag--info {
+  background-color: #f0f2f8 !important;
+  color: #667eea !important;
+  border-color: #667eea !important;
 }
 </style>

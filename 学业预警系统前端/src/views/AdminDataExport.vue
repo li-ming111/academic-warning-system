@@ -1,14 +1,14 @@
 <template>
   <div class="admin-data-export">
     <div class="page-header">
-      <h1>📊 数据导出与备份</h1>
+      <h1>数据导出与备份</h1>
       <p>Excel导入导出、报表生成、数据备份恢复</p>
     </div>
 
     <!-- Tab页签 -->
     <el-tabs type="card">
       <!-- 数据导出 -->
-      <el-tab-pane label="📥 数据导出">
+      <el-tab-pane label="数据导出">
         <div class="tab-content">
           <el-row :gutter="20" style="margin-bottom: 20px;">
             <el-col :xs="24" :sm="12" :md="6">
@@ -91,7 +91,7 @@
       </el-tab-pane>
 
       <!-- 数据导入 -->
-      <el-tab-pane label="📤 数据导入">
+      <el-tab-pane label="数据导入">
         <div class="tab-content">
           <el-row :gutter="20">
             <el-col :xs="24" :md="12">
@@ -170,7 +170,7 @@
       </el-tab-pane>
 
       <!-- 报表生成 -->
-      <el-tab-pane label="📈 报表生成">
+      <el-tab-pane label="报表生成">
         <div class="tab-content">
           <el-card style="margin-bottom: 20px;">
             <template #header>
@@ -230,7 +230,7 @@
       </el-tab-pane>
 
       <!-- 数据备份 -->
-      <el-tab-pane label="💾 数据备份">
+      <el-tab-pane label="数据备份">
         <div class="tab-content">
           <el-card style="margin-bottom: 20px;">
             <template #header>
@@ -278,7 +278,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { adminAPI } from '@/api/index'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 // 数据
 const token = localStorage.getItem('token')
@@ -297,42 +297,67 @@ const reportForm = ref({
 })
 
 onMounted(async () => {
+  await loadExportHistory()
   await loadReportTemplates()
   await loadBackupList()
-  initExportHistory()
 })
 
-// 初始化导出历史
-const initExportHistory = () => {
-  exportHistory.value = [
-    {
-      id: 1,
-      file_name: 'students_20251213_100000.xlsx',
-      data_type: '学生数据',
-      record_count: 1250,
-      file_size: '2.5 MB',
-      created_at: '2025-12-13 10:00:00'
-    },
-    {
-      id: 2,
-      file_name: 'scores_20251213_090000.xlsx',
-      data_type: '成绩数据',
-      record_count: 5000,
-      file_size: '8.2 MB',
-      created_at: '2025-12-13 09:00:00'
+// 加载导出历史
+const loadExportHistory = async () => {
+  try {
+    const response = await adminAPI.getExportHistory()
+    if (Array.isArray(response)) {
+      // 为了兼容后端返回的驼峰命名，需要转换字段名
+const formatted = response.map(item => ({
+        id: item.id,
+        file_name: item.fileName || '',
+        data_type: item.dataType || '',
+        record_count: item.recordCount || 0,
+        file_size: '\u672a知',
+        created_at: item.createdAt ? new Date(item.createdAt).toLocaleString('zh-CN') : ''
+      }))
+      exportHistory.value = formatted
+    } else if (response?.data) {
+      const formatted = response.data.map(item => ({
+        id: item.id,
+        file_name: item.fileName || '',
+        data_type: item.dataType || '',
+        record_count: item.recordCount || 0,
+        file_size: '\u672a知',
+        created_at: item.createdAt ? new Date(item.createdAt).toLocaleString('zh-CN') : ''
+      }))
+      exportHistory.value = formatted
     }
-  ]
+  } catch (error) {
+    console.error('\u52a0载导出历史失败:', error)
+    exportHistory.value = []
+  }
 }
+
+// 初始化导出历史(已删除虽拟数据，改用技能加载)
 
 // 导出学生数据
 const exportStudents = async () => {
   try {
     const response = await adminAPI.exportStudents()
-    if (response) {
-      ElMessage.success('学生数据已导出')
-      initExportHistory()
+    let data = []
+    if (Array.isArray(response)) {
+      data = response
+    } else if (response?.data) {
+      data = Array.isArray(response.data) ? response.data : [response.data]
     }
+    
+    if (data.length === 0) {
+      ElMessage.warning('暂无学生数据')
+      return
+    }
+    
+    const fileName = `学生数据_${new Date().getTime()}.xlsx`
+    downloadExcel(data, fileName)
+    ElMessage.success('学生数据已导出')
+    await loadExportHistory()
   } catch (error) {
+    console.error('导出失败:', error)
     ElMessage.error('导出失败')
   }
 }
@@ -341,11 +366,24 @@ const exportStudents = async () => {
 const exportScores = async () => {
   try {
     const response = await adminAPI.exportScores()
-    if (response) {
-      ElMessage.success('成绩数据已导出')
-      initExportHistory()
+    let data = []
+    if (Array.isArray(response)) {
+      data = response
+    } else if (response?.data) {
+      data = Array.isArray(response.data) ? response.data : [response.data]
     }
+    
+    if (data.length === 0) {
+      ElMessage.warning('暂无成绩数据')
+      return
+    }
+    
+    const fileName = `成绩数据_${new Date().getTime()}.xlsx`
+    downloadExcel(data, fileName)
+    ElMessage.success('成绩数据已导出')
+    await loadExportHistory()
   } catch (error) {
+    console.error('导出失败:', error)
     ElMessage.error('导出失败')
   }
 }
@@ -354,11 +392,24 @@ const exportScores = async () => {
 const exportWarnings = async () => {
   try {
     const response = await adminAPI.exportWarnings()
-    if (response) {
-      ElMessage.success('预警数据已导出')
-      initExportHistory()
+    let data = []
+    if (Array.isArray(response)) {
+      data = response
+    } else if (response?.data) {
+      data = Array.isArray(response.data) ? response.data : [response.data]
     }
+    
+    if (data.length === 0) {
+      ElMessage.warning('暂无预警数据')
+      return
+    }
+    
+    const fileName = `预警数据_${new Date().getTime()}.xlsx`
+    downloadExcel(data, fileName)
+    ElMessage.success('预警数据已导出')
+    await loadExportHistory()
   } catch (error) {
+    console.error('导出失败:', error)
     ElMessage.error('导出失败')
   }
 }
@@ -367,13 +418,76 @@ const exportWarnings = async () => {
 const exportUsers = async () => {
   try {
     const response = await adminAPI.exportUsers()
-    if (response) {
-      ElMessage.success('用户数据已导出')
-      initExportHistory()
+    let data = []
+    if (Array.isArray(response)) {
+      data = response
+    } else if (response?.data) {
+      data = Array.isArray(response.data) ? response.data : [response.data]
     }
+    
+    if (data.length === 0) {
+      ElMessage.warning('暂无用户数据')
+      return
+    }
+    
+    const fileName = `用户数据_${new Date().getTime()}.xlsx`
+    downloadExcel(data, fileName)
+    ElMessage.success('用户数据已导出')
+    await loadExportHistory()
   } catch (error) {
+    console.error('导出失败:', error)
     ElMessage.error('导出失败')
   }
+}
+
+// 使用 JSON 导出 Excel（前端方案，无需后端依赖）
+const downloadExcel = (data, filename) => {
+  try {
+    // 动态加载 XLSX 库
+    if (!window.XLSX) {
+      const script = document.createElement('script')
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+      script.async = true
+      script.onload = () => {
+        exportToExcel(data, filename)
+      }
+      document.body.appendChild(script)
+    } else {
+      exportToExcel(data, filename)
+    }
+  } catch (error) {
+    console.error('导出Excel失败:', error)
+    ElMessage.error('导出Excel失败，请稍后重试')
+  }
+}
+
+// 导出到 Excel 的具体逻辑
+const exportToExcel = (data, filename) => {
+  if (!data || data.length === 0) {
+    ElMessage.error('没有数据可导出')
+    return
+  }
+
+  // 获取所有字段作为表头
+  const headers = Object.keys(data[0])
+  
+  // 准备工作表数据
+  const worksheetData = [
+    headers,  // 表头
+    ...data.map(row => headers.map(header => row[header]))
+  ]
+  
+  // 创建工作簿
+  const worksheet = window.XLSX.utils.aoa_to_sheet(worksheetData)
+  const workbook = window.XLSX.utils.book_new()
+  window.XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1')
+  
+  // 设置列宽
+  const colWidths = headers.map(h => Math.max(h.length * 2, 15))
+  worksheet['!cols'] = colWidths.map(width => ({ wch: width }))
+  
+  // 导出
+  window.XLSX.writeFile(workbook, filename)
 }
 
 // 文件选择处理
@@ -508,12 +622,64 @@ const deleteBackup = (backupId) => {
 
 // 删除导出
 const deleteExport = (exportId) => {
-  ElMessage.info('删除功能开发中...')
+  ElMessageBox.confirm('确定删除该导出记录吗？', '警告', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await adminAPI.deleteExport(exportId)
+      ElMessage.success('已删除')
+      await loadExportHistory()
+    } catch (error) {
+      ElMessage.error('删除失败')
+    }
+  }).catch(() => {
+    // 取消删除
+  })
 }
 
 // 下载文件
-const downloadFile = (file) => {
-  ElMessage.info('下载功能开发中...')
+const downloadFile = async (file) => {
+  try {
+    // 根据数据类型调用相应的导出接口
+    let response
+    switch(file.data_type) {
+      case '学生数据':
+        response = await adminAPI.exportStudents()
+        break
+      case '成绩数据':
+        response = await adminAPI.exportScores()
+        break
+      case '预警数据':
+        response = await adminAPI.exportWarnings()
+        break
+      case '用户数据':
+        response = await adminAPI.exportUsers()
+        break
+      default:
+        ElMessage.error('未知的数据类型')
+        return
+    }
+    
+    let data = []
+    if (Array.isArray(response)) {
+      data = response
+    } else if (response?.data) {
+      data = Array.isArray(response.data) ? response.data : [response.data]
+    }
+    
+    if (data.length === 0) {
+      ElMessage.warning('数据已删除或不存在')
+      return
+    }
+    
+    downloadExcel(data, file.file_name)
+    ElMessage.success('正在下载')
+  } catch (error) {
+    console.error('下载失败:', error)
+    ElMessage.error('下载失败')
+  }
 }
 </script>
 

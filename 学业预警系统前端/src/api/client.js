@@ -7,12 +7,17 @@ const apiClient = axios.create({
   timeout: 10000
 })
 
-// 请求拦截器
+// 请求拦接器
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+    // 添加时间戳參数以避免缓存
+    if (config.method === 'get' || config.method === 'GET') {
+      config.params = config.params || {}
+      config.params._t = new Date().getTime()
     }
     return config
   },
@@ -40,7 +45,11 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('token')
       localStorage.removeItem('userId')
       localStorage.removeItem('username')
+      localStorage.removeItem('userName')
+      localStorage.removeItem('email')
+      localStorage.removeItem('phone')
       localStorage.removeItem('role')
+      localStorage.removeItem('adminPreferences')
       window.location.href = '/login'
     }
     // 403 仅记录不跳转，交由前端处理

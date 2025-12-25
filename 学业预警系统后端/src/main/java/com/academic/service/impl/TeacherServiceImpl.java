@@ -157,10 +157,32 @@ public class TeacherServiceImpl extends ServiceImpl<TeacherProfileMapper, Teache
 
     @Override
     public List<Enrollment> getEnrollments(Long teacherId, String courseId) {
+        // 如果没有传入teacherId，则查询所有选修课（用于导出等操作）
+        // 如果传入了teacherId，则只查询该教师对应的课程的选修课
         QueryWrapper<Enrollment> queryWrapper = new QueryWrapper<>();
-        if (courseId != null && !courseId.isEmpty()) {
+        
+        if (teacherId != null && teacherId > 0) {
+            // 查询该教师教授的课程
+            QueryWrapper<Course> courseWrapper = new QueryWrapper<>();
+            courseWrapper.eq("teacher_id", teacherId);
+            List<Course> teacherCourses = courseMapper.selectList(courseWrapper);
+            
+            if (teacherCourses.isEmpty()) {
+                return List.of(); // 教师没有课程，返回空列表
+            }
+            
+            // 获取所有课程ID
+            List<Long> courseIds = teacherCourses.stream()
+                    .map(Course::getId)
+                    .toList();
+            
+            // 查询这些课程的选修课数据
+            queryWrapper.in("course_id", courseIds);
+        } else if (courseId != null && !courseId.isEmpty()) {
+            // 如果指定了课程ID，只查询该课程的选修课
             queryWrapper.eq("course_id", courseId);
         }
+        
         return enrollmentMapper.selectList(queryWrapper);
     }
 

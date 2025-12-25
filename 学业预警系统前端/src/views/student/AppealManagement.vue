@@ -193,8 +193,8 @@ const submitForm = reactive({
 
 onMounted(async () => {
   const userInfo = JSON.parse(localStorage.getItem('user') || '{}')
-  userId.value = userInfo.userId || userInfo.id
-  studentId.value = userInfo.studentId
+  userId.value = localStorage.getItem('userId') || userInfo.userId || userInfo.id
+  studentId.value = localStorage.getItem('studentId') || userInfo.studentId
 
   await loadStatistics()
   await loadAppeals()
@@ -204,12 +204,12 @@ onMounted(async () => {
 async function loadStatistics() {
   try {
     const response = await studentAPI.getAppealStatistics(studentId.value)
-    if (response.data.success) {
+    if (response.data?.code === 200) {
       statistics.value = response.data.data || {}
     }
     
     const successResp = await studentAPI.getAppealSuccessRate(studentId.value)
-    if (successResp.data.success) {
+    if (successResp.data?.code === 200) {
       successRate.value = successResp.data.data.successRate || 0
     }
   } catch (error) {
@@ -241,7 +241,7 @@ async function loadAppeals() {
 async function loadReasonStats() {
   try {
     const response = await studentAPI.getAppealReasonStatistics(studentId.value)
-    if (response.data.success) {
+    if (response.data?.code === 200) {
       reasonStats.value = response.data.data || {}
     }
   } catch (error) {

@@ -8,6 +8,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.cors.CorsConfiguration;
+import java.util.Arrays;
 
 @Configuration
 public class SecurityConfig implements WebMvcConfigurer {
@@ -20,11 +22,10 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-            .allowedOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175",
-                           "http://localhost:5176", "http://localhost:5177", "http://localhost:5181")
-            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+            .allowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*")
+            .allowedMethods("*")
             .allowedHeaders("*")
-            .allowCredentials(false)
+            .allowCredentials(true)
             .maxAge(3600);
     }
 
@@ -32,13 +33,16 @@ public class SecurityConfig implements WebMvcConfigurer {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> {})
-            .headers(headers -> headers
-                .contentTypeOptions(contentTypeOptions -> contentTypeOptions.disable())
-                .xssProtection(xss -> xss.disable())
-                .frameOptions(frameOptions -> frameOptions.disable())
-                .disable()
-            )
+            .cors(cors -> cors.configurationSource(request -> {
+                CorsConfiguration corsConfig = new CorsConfiguration();
+                corsConfig.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*"));
+                corsConfig.setAllowedMethods(Arrays.asList("*"));
+                corsConfig.setAllowedHeaders(Arrays.asList("*"));
+                corsConfig.setAllowCredentials(true);
+                corsConfig.setMaxAge(3600L);
+                return corsConfig;
+            }))
+            .headers(headers -> headers.disable())
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/**").permitAll()
             );

@@ -84,9 +84,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import * as echarts from 'echarts'
-import { ElMessage } from 'element-plus'
 import { counselorAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const selectedCourse = ref('1')
 const scoreStats = ref({
@@ -101,15 +100,14 @@ const trendChartContainer = ref(null)
 const trendDialogVisible = ref(false)
 
 onMounted(async () => {
-  await loadScoreData()
+  await loadScores()
   initCharts()
 })
 
-const loadScoreData = async () => {
+const loadScores = async () => {
   try {
-    const counselorId = localStorage.getItem('counselorId') || localStorage.getItem('userId')
-    if (!counselorId) return
-    
+    const counselorId = localStorage.getItem('counselorId') || getUserId()
+
     // 获取低分学生列表
     const response = await counselorAPI.getLowScoreStudents(counselorId)
     lowScoreStudents.value = response.data || []
@@ -144,7 +142,7 @@ const initCharts = () => {
       xAxis: { type: 'category', data: ['50-60', '60-70', '70-80', '80-90', '90-100'] },
       yAxis: { type: 'value' },
       series: [{
-        data: [3, 5, 8, 12, 10],
+        data: [],
         type: 'bar',
         itemStyle: { color: '#409eff' }
       }]
@@ -162,7 +160,7 @@ const viewTrend = (row) => {
         xAxis: { type: 'category', data: ['秋季', '春季', '秋季', '春季'] },
         yAxis: { type: 'value' },
         series: [{
-          data: [72, 75, 78, 82],
+          data: [],
           type: 'line',
           smooth: true,
           itemStyle: { color: '#67c23a' }

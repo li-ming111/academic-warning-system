@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-rules">
+  <div class="admin-rules" style="background-color: #f8f9fa !important; min-height: 100vh;">
     <el-card>
       <template #header>
         <div class="card-header">
@@ -90,10 +90,20 @@ const submitAddRule = async () => {
 <style scoped>
 .admin-rules {
   padding: 20px;
+  background-color: #f8f9fa !important;
+  min-height: 100vh;
 }
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+/* 全局样式覆盖 */
+.admin-rules :deep(.el-card) {
+  border: 1px solid #e9ecef !important;
+}
+.admin-rules :deep(.el-button--primary) {
+  background-color: #667eea !important;
+  border-color: #667eea !important;
 }
 </style>

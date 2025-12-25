@@ -36,7 +36,7 @@
 
         <div class="subscription-section">
           <div class="section-title">推送渠道</div>
-          <el-checkbox v-model="preferences.pushApp">
+          <el-checkbox v-model="preferences.pushApp"> 
             <i class="el-icon-bell"></i> 应用内通知
           </el-checkbox>
           <el-checkbox v-model="preferences.pushEmail">
@@ -157,7 +157,7 @@ export default {
   },
   computed: {
     userId() {
-      return this.$store.state.user?.id
+      return localStorage.getItem('userId') || this.$store.state.user?.id
     }
   },
   mounted() {
@@ -206,12 +206,13 @@ export default {
 
     async loadPreferences() {
       try {
-        const response = await studentAPI.getSubscriptionPreferences(this.userId)
+        const studentId = localStorage.getItem('studentId') || this.userId
+        const response = await studentAPI.getSubscriptionPreferences(studentId)
         if (response.data?.code === 200) {
           Object.assign(this.preferences, response.data.data)
         }
       } catch (error) {
-        this.$message.error('加载订阅偏好失败')
+        console.warn('加载订阅偏好失败', error)
       }
     },
 

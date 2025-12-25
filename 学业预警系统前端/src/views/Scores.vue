@@ -3,8 +3,7 @@
     <!-- 筛选器 -->
     <div class="filter-section">
       <el-select v-model="selectedSemester" placeholder="选择学期" style="width: 200px;">
-        <el-option label="秋季" value="秋季"></el-option>
-        <el-option label="春季" value="春季"></el-option>
+        <el-option v-for="sem in availableSemesters" :key="sem" :label="sem" :value="sem"></el-option>
       </el-select>
       <el-button type="primary" @click="loadScores">查询</el-button>
       <el-button @click="exportScores">导出成绩</el-button>
@@ -15,7 +14,29 @@
       <template #header>
         <div class="card-header">成绩趋势分析</div>
       </template>
-      <div id="trendsChart" style="width: 100%; height: 300px;"></div>
+      <!-- 统计卡片 -->
+      <div class="stats-cards" style="margin-bottom: 20px; display: flex; gap: 20px;">
+        <div class="stat-card" style="flex: 1; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
+          <div style="font-size: 12px; opacity: 0.9;">当前学期GPA</div>
+          <div style="font-size: 28px; font-weight: bold; margin-top: 10px;">{{ currentGpa }}</div>
+          <div style="font-size: 12px; margin-top: 5px;">{{ gpaLevel }}</div>
+        </div>
+        <div class="stat-card" style="flex: 1; padding: 15px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border-radius: 8px;">
+          <div style="font-size: 12px; opacity: 0.9;">最高GPA</div>
+          <div style="font-size: 28px; font-weight: bold; margin-top: 10px;">{{ maxGpa }}</div>
+          <div style="font-size: 12px; margin-top: 5px;">历史最佳</div>
+        </div>
+        <div class="stat-card" style="flex: 1; padding: 15px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border-radius: 8px;">
+          <div style="font-size: 12px; opacity: 0.9;">平均GPA</div>
+          <div style="font-size: 28px; font-weight: bold; margin-top: 10px;">{{ avgGpa }}</div>
+          <div style="font-size: 12px; margin-top: 5px;">全周期平均</div>
+        </div>
+        <div class="stat-card" style="flex: 1; padding: 15px; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border-radius: 8px;">
+          <div style="font-size: 12px; opacity: 0.9;">挂科课程</div>
+          <div style="font-size: 28px; font-weight: bold; margin-top: 10px;">{{ failedCourses }}</div>
+          <div style="font-size: 12px; margin-top: 5px;" :style="{ color: failedCourses > 5 ? '#ff4444' : failedCourses > 3 ? '#ffaa00' : '#44ff44' }">{{ warnLevel }}</div>
+        </div>
+      </div>
     </el-card>
 
     <!-- 成绩列表 -->
@@ -26,7 +47,6 @@
       
       <el-table :data="scoresList" stripe>
         <el-table-column prop="courseName" label="课程名称" width="200"></el-table-column>
-        <el-table-column prop="courseCode" label="课程代码" width="120"></el-table-column>
         <el-table-column prop="credits" label="学分" width="80"></el-table-column>
         <el-table-column prop="scoreTotal" label="总分" width="80">
           <template #default="{ row }">
@@ -96,13 +116,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import { studentAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
-const selectedSemester = ref('秋季')
+const selectedSemester = ref('')
+const availableSemesters = ref([])
 const scoresList = ref([])
+const historyBenchmarks = ref([])
 const appealDialogVisible = ref(false)
 const appealForm = ref({
   courseId: null,
@@ -115,33 +138,84 @@ const appealForm = ref({
 })
 
 onMounted(async () => {
+  // 根据学号生成可用的学期列表
+  generateAvailableSemesters()
+  if (availableSemesters.value.length > 0) {
+    selectedSemester.value = availableSemesters.value[0]
+  }
+  // 先加载历史GPA数据，然后再加载成绩
+  await loadHistoryBenchmark()
+  await loadScores()
+})
+
+// 根据学号前四位（入学年份）生成可用的学期
+const generateAvailableSemesters = () => {
+  const currentYear = new Date().getFullYear()
+  const userId = getUserId()
+  
+  // 从 localStorage 中获取学号（学号为 10 位数字）
+  let entranceYear = 2023  // 默认值
+  const studentId = localStorage.getItem('studentId') || localStorage.getItem('username')
+  if (studentId && studentId.length >= 4) {
+    const yearPrefix = parseInt(studentId.substring(0, 4))
+    if (!isNaN(yearPrefix) && yearPrefix >= 2000 && yearPrefix <= currentYear) {
+      entranceYear = yearPrefix
+    }
+  }
+  
+  const semesters = []
+  for (let year = entranceYear; year <= currentYear; year++) {
+    semesters.push(`${year}-${year + 1}-1`)  // 秋季
+    if (year < currentYear) {
+      semesters.push(`${year}-${year + 1}-2`)  // 春季（除了当前年度）
+    }
+  }
+  
+  availableSemesters.value = semesters.reverse()  // 值倒序，最新学期优先
+}
+
+// 监听学期变化，自动重新加载成绩
+watch(selectedSemester, async (newVal) => {
   await loadScores()
 })
 
 // 加载成绩列表
 const loadScores = async () => {
   try {
-    const userIdStr = localStorage.getItem('userId')
-    const userId = userIdStr ? parseInt(userIdStr) : null
-    console.log('userId (string):', userIdStr, 'userId (number):', userId)
+    const userId = getUserId()
+    console.log('userId (number):', userId)
     if (!userId) {
       ElMessage.error('请先登录')
       return
     }
     console.log('selectedSemester:', selectedSemester.value)
-    // 不传semester参数，获取所有成绩
-    const response = await studentAPI.getScores(userId, null)
+    console.log('发送API请求:', {userId, semester: selectedSemester.value})
+    // 清空旧数据
+    scoresList.value = []
+    // 强制添加时间戳避免缓存
+    const response = await studentAPI.getScores(userId, selectedSemester.value)
     console.log('成绩响应:', response)
+    console.log('响应类型:', typeof response, '是否数组:', Array.isArray(response))
+    if (response) {
+      console.log('响应长度:', response.length)
+      if (response.length > 0) {
+        console.log('第一条数据:', JSON.stringify(response[0]))
+      }
+    }
     if (Array.isArray(response) && response.length > 0) {
-      scoresList.value = response.map(score => ({
-        ...score,
-        status: 'normal',
-        grade: calculateGrade(score.scoreTotal || 0)
-      }))
+      scoresList.value = response.map(score => {
+        console.log('处理成绩:', {id: score.id, courseName: score.courseName, credits: score.credits, scoreTotal: score.scoreTotal})
+        return {
+          ...score,
+          status: 'normal',
+          grade: calculateGrade(score.scoreTotal || 0)
+        }
+      })
+      console.log('最终scoresList长度:', scoresList.value.length)
     } else {
       scoresList.value = []
     }
-    initTrendsChart()
+    calculateStats()
   } catch (error) {
     console.error('加载成绩失败:', error)
     console.error('错误详情:', error.response?.data || error.message)
@@ -158,66 +232,66 @@ const calculateGrade = (score) => {
   return 'D'
 }
 
-// 初始化趋势图
-const initTrendsChart = () => {
-  const chartDom = document.getElementById('trendsChart')
-  if (!chartDom) return
-
-  const myChart = echarts.init(chartDom)
-  const option = {
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['高等数学', '线性代数', '数据结构', '数据库', '计算机网络'] },
-    grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: ['第1次', '第2次', '第3次']
-    },
-    yAxis: {
-      type: 'value',
-      min: 0,
-      max: 100
-    },
-    series: [
-      {
-        name: '高等数学',
-        data: [72, 73, 75],
-        type: 'line',
-        smooth: true,
-        itemStyle: { color: '#409eff' }
-      },
-      {
-        name: '线性代数',
-        data: [65, 68, 68],
-        type: 'line',
-        smooth: true,
-        itemStyle: { color: '#f56c6c' }
-      },
-      {
-        name: '数据结构',
-        data: [80, 82, 82],
-        type: 'line',
-        smooth: true,
-        itemStyle: { color: '#67c23a' }
-      },
-      {
-        name: '数据库',
-        data: [83, 84, 85],
-        type: 'line',
-        smooth: true,
-        itemStyle: { color: '#e6a23c' }
-      },
-      {
-        name: '计算机网络',
-        data: [70, 71, 72],
-        type: 'line',
-        smooth: true,
-        itemStyle: { color: '#909399' }
-      }
-    ]
+// 加载历史GPA数据
+const loadHistoryBenchmark = async () => {
+  try {
+    const userId = getUserId()
+    if (!userId) return
+    const response = await studentAPI.getHistoryBenchmark(userId)
+    if (response && Array.isArray(response)) {
+      // 响应直接是数组
+      historyBenchmarks.value = response
+    } else if (response?.data?.code === 200) {
+      historyBenchmarks.value = response.data.data || []
+    } else {
+      historyBenchmarks.value = []
+    }
+    console.log('加载的历史GPA数据:', historyBenchmarks.value)
+    calculateStats()
+  } catch (error) {
+    console.error('加载历史GPA数据失败:', error)
+    historyBenchmarks.value = []
   }
+}
 
-  myChart.setOption(option)
-  window.addEventListener('resize', () => myChart.resize())
+// 统计数据
+const currentGpa = ref('0.00')
+const maxGpa = ref('0.00')
+const avgGpa = ref('0.00')
+const failedCourses = ref(0)
+const gpaLevel = ref('--')
+const warnLevel = ref('--')
+
+// 计算统计数据
+const calculateStats = () => {
+  // 计算当前学朞的GPA（使用加权平均）
+  if (scoresList.value.length > 0) {
+    const totalWeightedGradePoints = scoresList.value.reduce((sum, c) => sum + (c.gradePoint || 0) * (c.credits || 0), 0)
+    const totalCredits = scoresList.value.reduce((sum, c) => sum + (c.credits || 0), 0)
+    currentGpa.value = totalCredits > 0 ? (totalWeightedGradePoints / totalCredits).toFixed(2) : '0.00'
+    gpaLevel.value = currentGpa.value >= 3.5 ? '优秀' : currentGpa.value >= 3.0 ? '良好' : currentGpa.value >= 2.0 ? '中等' : '需改进'
+  } else {
+    currentGpa.value = '0.00'
+    gpaLevel.value = '––'
+  }
+  
+  // 计算最高GPA和平均GPA介绿整个学业
+  if (historyBenchmarks.value && historyBenchmarks.value.length > 0) {
+    const sorted = [...historyBenchmarks.value].sort((a, b) => b.studentGpa - a.studentGpa)
+    maxGpa.value = (sorted[0]?.studentGpa || 0).toFixed(2)
+    
+    const sum = historyBenchmarks.value.reduce((acc, item) => acc + (item.studentGpa || 0), 0)
+    avgGpa.value = (sum / historyBenchmarks.value.length).toFixed(2)
+  } else {
+    maxGpa.value = currentGpa.value
+    avgGpa.value = currentGpa.value
+  }
+  
+  // 计算挂科课程数
+  failedCourses.value = scoresList.value.filter(c => c.scoreTotal < 60).length
+  if (failedCourses.value < 3) warnLevel.value = '🟢 低级预警'
+  else if (failedCourses.value <= 5) warnLevel.value = '🟡 中级预警'
+  else warnLevel.value = '🔴 高级预警'
 }
 
 // 打开申诉对话框

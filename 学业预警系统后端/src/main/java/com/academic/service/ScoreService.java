@@ -33,4 +33,9 @@ public interface ScoreService extends IService<Score> {
      */
     void detectWarnings(Long studentId);
 
+    /**
+     * 获取课程信息
+     */
+    java.util.Map<String, Object> getCourseInfo(Long courseId);
+
 }

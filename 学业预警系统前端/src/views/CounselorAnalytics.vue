@@ -80,6 +80,7 @@
 import { ref, onMounted, computed } from 'vue'
 import * as echarts from 'echarts'
 import { counselorAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const warningChart = ref(null)
 const efficiencyChart = ref(null)
@@ -106,7 +107,7 @@ onMounted(async () => {
 
 const loadAnalyticsData = async () => {
   try {
-    const counselorId = localStorage.getItem('counselorId') || localStorage.getItem('userId')
+    const counselorId = localStorage.getItem('counselorId') || getUserId()
     if (!counselorId) return
     
     // 获取班级达标率排名
@@ -116,7 +117,7 @@ const loadAnalyticsData = async () => {
       ranking: index + 1,
       className: item.className,
       creditRate: parseFloat(item.achievementRate) || 0,
-      improvementRate: Math.floor(Math.random() * 5 - 2)
+      improvementRate: 0
     }))
   } catch (error) {
     console.error('加载数据分析失败:', error)
@@ -130,9 +131,9 @@ const initCharts = () => {
     const option = {
       series: [{
         data: [
-          { value: 35, name: '🔴 红色预警' },
-          { value: 55, name: '🟡 黄色预警' },
-          { value: 20, name: '🔵 蓝色预警' }
+      { value: 0, name: '🔴 红色预警' },
+          { value: 0, name: '🟡 黄色预警' },
+          { value: 0, name: '🔵 蓝色预警' }
         ],
         type: 'pie'
       }]
@@ -147,7 +148,7 @@ const initCharts = () => {
       xAxis: { type: 'category', data: ['一班', '二班', '三班'] },
       yAxis: { type: 'value', name: '平均处理天数' },
       series: [{
-        data: [2.1, 1.8, 2.5],
+        data: [],
         type: 'bar',
         itemStyle: { color: '#409eff' }
       }]
@@ -164,14 +165,14 @@ const initCharts = () => {
       series: [
         {
           name: '红色预警',
-          data: [8, 9, 8, 7, 6, 5],
+          data: [],
           type: 'line',
           smooth: true,
           itemStyle: { color: '#f56c6c' }
         },
         {
           name: '黄色预警',
-          data: [15, 16, 14, 13, 12, 11],
+          data: [],
           type: 'line',
           smooth: true,
           itemStyle: { color: '#e6a23c' }

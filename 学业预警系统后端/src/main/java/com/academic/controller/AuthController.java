@@ -7,6 +7,7 @@ import com.academic.service.UserService;
 import com.academic.service.StudentService;
 import com.academic.service.TeacherService;
 import com.academic.service.CounselorService;
+import com.academic.service.CollegeService;
 import com.academic.mapper.CollegeMapper;
 import com.academic.mapper.MajorMapper;
 import com.academic.entity.*;
@@ -27,17 +28,19 @@ public class AuthController {
     private final StudentService studentService;
     private final TeacherService teacherService;
     private final CounselorService counselorService;
+    private final CollegeService collegeService;
     private final CollegeMapper collegeMapper;
     private final MajorMapper majorMapper;
     private final PasswordEncoder passwordEncoder;
 
     public AuthController(UserService userService, StudentService studentService,
                          TeacherService teacherService, CounselorService counselorService,
-                         CollegeMapper collegeMapper, MajorMapper majorMapper, PasswordEncoder passwordEncoder) {
+                         CollegeService collegeService, CollegeMapper collegeMapper, MajorMapper majorMapper, PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.studentService = studentService;
         this.teacherService = teacherService;
         this.counselorService = counselorService;
+        this.collegeService = collegeService;
         this.collegeMapper = collegeMapper;
         this.majorMapper = majorMapper;
         this.passwordEncoder = passwordEncoder;
@@ -87,6 +90,10 @@ public class AuthController {
             if (studentId == null || studentId.trim().isEmpty()) {
                 throw new RuntimeException("学号为必填项");
             }
+            // 模式验证：学号必须是10位数字（本科）或10位数字+Z（专升本）
+            if (!studentId.matches("\\d{10}Z?")) {
+                throw new RuntimeException("学号格式错误：本科学生为10位数字，专升本学生为10位数字加Z");
+            }
             if (password == null || password.trim().isEmpty()) {
                 throw new RuntimeException("密码为必填项");
             }
@@ -131,7 +138,11 @@ public class AuthController {
             // 获取参数
             String username = (String) params.get("username");
             String password = (String) params.get("password");
-            String majorCode = (String) params.get("majorCode");
+            String name = (String) params.get("name");
+            Long collegeId = null;
+            if (params.get("collegeId") instanceof Number) {
+                collegeId = ((Number) params.get("collegeId")).longValue();
+            }
             String phone = (String) params.get("phone");
             String email = (String) params.get("email");
 
@@ -142,22 +153,23 @@ public class AuthController {
             if (password == null || password.trim().isEmpty()) {
                 throw new RuntimeException("密码为必填项");
             }
-            if (majorCode == null || majorCode.trim().isEmpty()) {
-                throw new RuntimeException("专业为必填项");
+            if (name == null || name.trim().isEmpty()) {
+                throw new RuntimeException("姓名为必填项");
+            }
+            if (collegeId == null) {
+                throw new RuntimeException("所属学院为必填项");
             }
             if (phone == null || phone.trim().isEmpty()) {
-                throw new RuntimeException("手机号为必填项（用于学生联系）");
+                throw new RuntimeException("手机号为必填项");
             }
             if (email == null || email.trim().isEmpty()) {
-                throw new RuntimeException("邮箱为必填项（用于学生联系）");
+                throw new RuntimeException("邮箱为必填项");
             }
 
-            // 根据专业编码查询专业信息
-            QueryWrapper<Major> majorQuery = new QueryWrapper<>();
-            majorQuery.eq("code", majorCode);
-            Major major = majorMapper.selectOne(majorQuery);
-            if (major == null) {
-                throw new RuntimeException("无效的专业编码：" + majorCode + "，请联系管理员");
+            // 验证学院是否存在
+            College college = collegeService.getById(collegeId);
+            if (college == null) {
+                throw new RuntimeException("学院不存在");
             }
 
             // 创建用户对象
@@ -166,20 +178,20 @@ public class AuthController {
             user.setPassword(passwordEncoder.encode(password)); // 密码加密
             user.setPhone(phone);
             user.setEmail(email);
+            user.setName(name);
             user.setRole(2); // 教师角色
 
-            // 创建教师档案，自动关联学院（通过专业）
+            // 创建教师档案
             TeacherProfile profile = new TeacherProfile();
-            profile.setCollegeId(major.getCollegeId()); // 从专业自动获取学院ID
+            profile.setCollegeId(collegeId);
 
             // 调用注册服务
             Long userId = teacherService.registerTeacher(user, profile);
             Map<String, Object> result = new HashMap<>();
             result.put("userId", userId);
             result.put("username", username);
-            result.put("majorCode", majorCode);
-            result.put("collegeId", major.getCollegeId());
-            log.info("教师注册成功: {}，专业编码: {}，学院ID: {}", username, majorCode, major.getCollegeId());
+            result.put("collegeId", collegeId);
+            log.info("教师注册成功: {}，学院ID: {}", username, collegeId);
             return ApiResponse.success(result);
         } catch (Exception e) {
             log.error("教师注册失败", e);
@@ -277,6 +289,21 @@ public class AuthController {
             return ApiResponse.success(result);
         } catch (Exception e) {
             log.error("管理员注册失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 用户登出
+     */
+    @PostMapping("/logout")
+    public ApiResponse<String> logout() {
+        try {
+            // 登出逻辑（可选）：若使用JWT，前端自行删除token即可
+            // 此处仅作为接口确认存在，无需后端维护状态
+            return ApiResponse.success("登出成功");
+        } catch (Exception e) {
+            log.error("登出失败", e);
             return ApiResponse.error(e.getMessage());
         }
     }

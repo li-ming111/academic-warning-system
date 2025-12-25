@@ -42,6 +42,7 @@ CREATE TABLE `classes` (
 CREATE TABLE `users` (
     `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+    `name` VARCHAR(100) COMMENT '姓名',
     `password` VARCHAR(255) NOT NULL COMMENT '密码（SHA-256加密）',
     `email` VARCHAR(100) COMMENT '邮箱',
     `phone` VARCHAR(20) COMMENT '电话号码',
@@ -254,6 +255,7 @@ CREATE TABLE `communication_logs` (
     `content` TEXT COMMENT '沟通内容',
     `category` VARCHAR(50) COMMENT '分类：预警处理，选修建议等',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`),
     FOREIGN KEY (`student_id`) REFERENCES `student_profile` (`id`),
     FOREIGN KEY (`warning_id`) REFERENCES `academic_warnings` (`id`),

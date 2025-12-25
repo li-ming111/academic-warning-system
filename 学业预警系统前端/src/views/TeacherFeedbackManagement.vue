@@ -151,6 +151,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { teacherAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 import { ElMessage } from 'element-plus'
 
 const feedbacks = ref([])
@@ -186,7 +187,7 @@ onMounted(async () => {
 const loadFeedbacks = async () => {
   loading.value = true
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     const teacherId = localStorage.getItem('teacherId') || userId
     if (!teacherId) return
     

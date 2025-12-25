@@ -278,7 +278,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { studentAPI } from '@/api'
 import { ElMessage } from 'element-plus'
 
@@ -296,31 +296,67 @@ const progressReport = ref({})
 onMounted(async () => {
   // 从localStorage获取用户信息
   const userInfo = JSON.parse(localStorage.getItem('user') || '{}')
-  userId.value = userInfo.userId || userInfo.id
-  studentId.value = userInfo.studentId
-  classId.value = userInfo.classId
-  majorId.value = userInfo.majorId
+  userId.value = localStorage.getItem('userId') || userInfo.userId || userInfo.id
+  studentId.value = localStorage.getItem('studentId') || userInfo.studentId
+  classId.value = localStorage.getItem('classId') || userInfo.classId
+  majorId.value = localStorage.getItem('majorId') || userInfo.majorId
 
-  await loadHistoryBenchmark()
-  await loadProgressReport()
+  console.log('=== BenchmarkAnalysis 初始化 ===')
+  console.log('userId:', userId.value)
+  console.log('studentId:', studentId.value)
+  console.log('=============================')  
+  
+  if (userId.value) {
+    await loadHistoryBenchmark()
+    await loadProgressReport()
+  } else {
+    console.error('userId 为空！无法加载数据')
+    ElMessage.warning('无法获取用户信息，请重新登录')
+  }
 })
 
 async function loadHistoryBenchmark() {
   try {
-    const response = await studentAPI.getHistoryBenchmark(studentId.value)
-    if (response.data.success) {
-      historyBenchmarks.value = response.data.data || []
-      // 提取所有学期
-      semesters.value = historyBenchmarks.value.map(item => item.semester)
-      // 设置当前学期为最新的学期
-      if (semesters.value.length > 0) {
-        selectedSemester.value = semesters.value[0]
-        latestBenchmark.value = historyBenchmarks.value[0]
-      }
+    console.log('loadHistoryBenchmark - userId:', userId.value, 'studentId:', studentId.value)
+    // 优先使用userId，因为studentId可能有问题
+    const targetId = userId.value || studentId.value
+    if (!targetId) {
+      console.warn('userId和studentId都未定义')
+      ElMessage.warning('学生信息未找到')
+      return
+    }
+    const response = await studentAPI.getHistoryBenchmark(targetId)
+    console.log('getHistoryBenchmark response:', response)
+    
+    // 处理两种可能的响应格式
+    let data = []
+    if (response && Array.isArray(response)) {
+      data = response
+    } else if (response?.data?.code === 200) {
+      data = response.data.data || []
+    } else if (response?.data && Array.isArray(response.data)) {
+      data = response.data
+    }
+    
+    console.log('处理后的数据:', data)
+    historyBenchmarks.value = data
+    
+    // 提取所有学期
+    semesters.value = data.map(item => item.semester)
+    console.log('提取的学期:', semesters.value)
+    
+    // 设置当前学期为最新的学期
+    if (semesters.value.length > 0) {
+      selectedSemester.value = semesters.value[0]
+      latestBenchmark.value = data[0]
+      console.log('设置的selectedSemester:', selectedSemester.value)
+      console.log('设置的latestBenchmark:', latestBenchmark.value)
+      // 强制触发一次loadBenchmarkData
+      await loadBenchmarkData()
     }
   } catch (error) {
+    console.error('加载历史对标分析数据失败:', error)
     ElMessage.error('加载历史对标分析数据失败')
-    console.error(error)
   }
 }
 
@@ -328,25 +364,52 @@ async function loadBenchmarkData() {
   if (!selectedSemester.value) return
 
   try {
-    const response = await studentAPI.getBenchmarkBySemester(studentId.value, selectedSemester.value)
-    if (response.data.success) {
-      latestBenchmark.value = response.data.data
+    // 优先使用userId，因为studentId可能有问题
+    const targetId = userId.value || studentId.value
+    console.log('loadBenchmarkData - userId:', userId.value, 'semester:', selectedSemester.value)
+    const response = await studentAPI.getBenchmarkBySemester(targetId, selectedSemester.value)
+    console.log('getBenchmarkBySemester response:', response)
+    
+    // 处理响应格式 - response 可能是直接对象
+    let data = null
+    if (response?.code === 200) {
+      // 格式1: {code: 200, data: {...}}
+      data = response.data
+    } else if (response?.data?.code === 200) {
+      // 格式2: response.data = {code: 200, data: {...}}
+      data = response.data.data
+    } else if (response?.data && !response.data.code && response.data.id) {
+      // 格式3: response.data 就是对象本身
+      data = response.data
+    } else if (response?.id) {
+      // 格式4: response 就是对象本身
+      data = response
+    }
+    
+    if (data && data.id) {
+      latestBenchmark.value = data
+      console.log('更新的benchmark数据:', data)
+      // 强制触发DOM更新
+      await nextTick()
+    } else {
+      console.warn('数据格式异常，无法解析:', response)
     }
   } catch (error) {
-    ElMessage.error('加载对标分析数据失败')
-    console.error(error)
+    console.error('加载对标分析数据失败:', error)
   }
 }
 
 async function loadProgressReport() {
   try {
-    const response = await studentAPI.getProgressReport(studentId.value)
-    if (response.data.success) {
+    console.log('loadProgressReport - userId:', userId.value)
+    const response = await studentAPI.getProgressReport(userId.value)
+    console.log('getProgressReport response:', response)
+    if (response.data?.code === 200) {
       progressReport.value = response.data.data || {}
     }
   } catch (error) {
+    console.error('加载进度报告失败:', error)
     ElMessage.error('加载进度报告失败')
-    console.error(error)
   }
 }
 

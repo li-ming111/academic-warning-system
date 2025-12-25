@@ -24,7 +24,7 @@
                 <el-input
                   v-model="newMessage.content"
                   type="textarea"
-                  rows="4"
+                  :rows="4"
                   placeholder="输入消息内容"
                 ></el-input>
               </el-form-item>
@@ -79,7 +79,7 @@
               <el-table-column prop="level" label="等级" width="80">
                 <template #default="{ row }">
                   <el-tag
-                    :type="row.level === 'info' ? '' : (row.level === 'warning' ? 'warning' : 'danger')"
+                    :type="row.level === 'info' ? 'info' : (row.level === 'warning' ? 'warning' : 'danger')"
                   >
                     {{ row.level }}
                   </el-tag>
@@ -120,7 +120,7 @@
                 <el-input
                   v-model="newTask.description"
                   type="textarea"
-                  rows="4"
+                  :rows="4"
                   placeholder="输入任务描述"
                 ></el-input>
               </el-form-item>
@@ -242,12 +242,7 @@ const newTask = ref({
   priority: 'medium'
 })
 
-const mockUsers = ref([
-  { id: 1, username: '学生用户1' },
-  { id: 2, username: '学生用户2' },
-  { id: 3, username: '教师用户1' },
-  { id: 4, username: '辅导员用户1' }
-])
+const mockUsers = ref([])
 
 // 计算属性
 const filteredTasks = computed(() => {
@@ -256,9 +251,24 @@ const filteredTasks = computed(() => {
 })
 
 onMounted(async () => {
+  await loadUsers()
   await loadMessages()
   await loadTasks()
 })
+
+// 加载用户列表
+const loadUsers = async () => {
+  try {
+    const response = await adminAPI.getUsers()
+    if (Array.isArray(response)) {
+      mockUsers.value = response
+    } else if (response && response.data && Array.isArray(response.data)) {
+      mockUsers.value = response.data
+    }
+  } catch (error) {
+    console.error('加载用户列表失败:', error)
+  }
+}
 
 // 加载消息
 const loadMessages = async () => {

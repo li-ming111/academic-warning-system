@@ -257,6 +257,7 @@ const handleRegister = async () => {
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   padding: 40px;
+  border: 1px solid #e9ecef !important;
 }
 
 .register-header {
@@ -275,5 +276,14 @@ const handleRegister = async () => {
   margin: 0;
   font-size: 13px;
   color: #999;
+}
+/* 全局样式覆盖 */
+.register-container :deep(.el-button--primary) {
+  background-color: #667eea !important;
+  border-color: #667eea !important;
+}
+.register-container :deep(.el-button--primary:hover) {
+  background-color: #5568d3 !important;
+  border-color: #5568d3 !important;
 }
 </style>

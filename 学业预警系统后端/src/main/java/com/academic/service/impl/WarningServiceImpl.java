@@ -29,7 +29,16 @@ public class WarningServiceImpl extends ServiceImpl<AcademicWarningMapper, Acade
 
     @Override
     public List<AcademicWarning> getStudentWarnings(Long studentId) {
-        return this.getBaseMapper().selectByStudentId(studentId);
+        // 使用原始的 selectByStudentId
+        List<AcademicWarning> warnings = this.getBaseMapper().selectByStudentId(studentId);
+        // 为每个预警添加课程信息（如果需要）
+        // 这里简单地设置默认标题，实际应该通过 JOIN 获取
+        for (AcademicWarning warning : warnings) {
+            if (warning.getTitle() == null || warning.getTitle().isEmpty()) {
+                warning.setTitle("学业预警");
+            }
+        }
+        return warnings;
     }
 
     @Override
@@ -97,9 +106,9 @@ public class WarningServiceImpl extends ServiceImpl<AcademicWarningMapper, Acade
             boolean matches = false;
             String level = rule.getLevel();
 
-            if ("low".equals(level) && failedCount <= 3) {
+            if ("low".equals(level) && failedCount < 3) {
                 matches = true;
-            } else if ("medium".equals(level) && failedCount > 3 && failedCount <= 5) {
+            } else if ("medium".equals(level) && failedCount >= 3 && failedCount <= 5) {
                 matches = true;
             } else if ("high".equals(level) && failedCount > 5) {
                 matches = true;
@@ -116,7 +125,15 @@ public class WarningServiceImpl extends ServiceImpl<AcademicWarningMapper, Acade
                     AcademicWarning warning = new AcademicWarning();
                     warning.setStudentId(studentId);
                     warning.setWarningLevel(level);
-                    warning.setDescription(String.format("学期末挨科数量：%d科，触发%s规则", failedCount, rule.getName()));
+                    // 设置中文标题
+                    if ("low".equals(level)) {
+                        warning.setTitle("低级预警");
+                    } else if ("medium".equals(level)) {
+                        warning.setTitle("中级预警");
+                    } else if ("high".equals(level)) {
+                        warning.setTitle("高级预警");
+                    }
+                    warning.setDescription(String.format("学期末挂科数量：%d科，触发%s规则", failedCount, rule.getName()));
                     warning.setStatus("pending");
                     warning.setCreatedAt(LocalDateTime.now());
                     warning.setUpdatedAt(LocalDateTime.now());

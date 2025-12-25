@@ -76,8 +76,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
 import { counselorAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const selectedClass = ref('')
 const courseList = ref([])
@@ -87,6 +87,20 @@ const overviewStats = ref({
   averageCredits: 0,
   insufficientStudents: 0
 })
+
+const loadCourses = async () => {
+  try {
+    const counselorId = localStorage.getItem('counselorId') || getUserId()
+    const response = await counselorAPI.getCourses(counselorId)
+    if (response && response.code === 0) {
+      courseList.value = response.data || []
+    } else if (Array.isArray(response)) {
+      courseList.value = response
+    }
+  } catch (error) {
+    console.error('加载课程数据失败:', error)
+  }
+}
 
 onMounted(async () => {
   // 加载班级列表

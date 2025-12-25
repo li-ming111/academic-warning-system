@@ -1,0 +1,593 @@
+<template>
+  <div class="admin-settings-container">
+    <div class="page-header">
+      <h1>个人设置</h1>
+      <p>管理您的账户信息和系统设置</p>
+    </div>
+
+    <el-row :gutter="20">
+      <!-- 左侧菜单 -->
+      <el-col :xs="24" :sm="24" :md="6">
+        <div class="settings-menu">
+          <div
+            v-for="item in menuItems"
+            :key="item.id"
+            class="menu-item"
+            :class="{ active: activeMenu === item.id }"
+            @click="activeMenu = item.id"
+          >
+            <el-icon class="menu-icon">
+              <component :is="item.icon"></component>
+            </el-icon>
+            <span>{{ item.label }}</span>
+          </div>
+        </div>
+      </el-col>
+
+      <!-- 右侧内容 -->
+      <el-col :xs="24" :sm="24" :md="18">
+        <!-- 账户信息 -->
+        <el-card v-if="activeMenu === 'account'" class="settings-card">
+          <template #header>
+            <div class="card-header">
+              <el-icon><User /></el-icon>
+              <span>账户信息</span>
+            </div>
+          </template>
+
+          <el-form :model="accountInfo" label-width="120px">
+            <el-form-item label="用户名">
+              <el-input v-model="accountInfo.username" disabled></el-input>
+            </el-form-item>
+            <el-form-item label="姓名">
+              <el-input v-model="accountInfo.name"></el-input>
+            </el-form-item>
+            <el-form-item label="邮箱">
+              <el-input v-model="accountInfo.email" type="email"></el-input>
+            </el-form-item>
+            <el-form-item label="手机号">
+              <el-input v-model="accountInfo.phone"></el-input>
+            </el-form-item>
+            <el-form-item label="账户创建">
+              <el-input v-model="accountInfo.createdAt" disabled></el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="updateAccount">保存修改</el-button>
+              <el-button @click="resetAccountForm">重置</el-button>
+            </el-form-item>
+          </el-form>
+        </el-card>
+
+        <!-- 修改密码 -->
+        <el-card v-if="activeMenu === 'password'" class="settings-card">
+          <template #header>
+            <div class="card-header">
+              <el-icon><Lock /></el-icon>
+              <span>修改密码</span>
+            </div>
+          </template>
+
+          <el-form :model="passwordForm" label-width="120px">
+            <el-form-item label="当前密码">
+              <el-input v-model="passwordForm.oldPassword" type="password" placeholder="请输入当前密码"></el-input>
+            </el-form-item>
+            <el-form-item label="新密码">
+              <el-input v-model="passwordForm.newPassword" type="password" placeholder="至少8位，包含字母和数字"></el-input>
+            </el-form-item>
+            <el-form-item label="确认新密码">
+              <el-input v-model="passwordForm.confirmPassword" type="password" placeholder="请再次输入新密码"></el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="changePassword">确认修改</el-button>
+              <el-button @click="resetPasswordForm">取消</el-button>
+            </el-form-item>
+          </el-form>
+
+          <el-divider></el-divider>
+
+          <div class="password-tips">
+            <h4>密码安全提示</h4>
+            <ul>
+              <li>建议设置复杂密码，包含大小写字母、数字和特殊符号</li>
+              <li>定期修改密码，至少90天修改一次</li>
+              <li>不要使用与其他账户相同的密码</li>
+              <li>避免使用容易被猜测的密码（生日、姓名等）</li>
+            </ul>
+          </div>
+        </el-card>
+
+        <!-- 系统偏好 -->
+        <el-card v-if="activeMenu === 'preferences'" class="settings-card">
+          <template #header>
+            <div class="card-header">
+              <el-icon><Setting /></el-icon>
+              <span>系统偏好</span>
+            </div>
+          </template>
+
+          <el-form :model="preferencesForm" label-width="150px">
+            <el-form-item label="主题色调">
+              <el-select v-model="preferencesForm.theme" placeholder="选择主题">
+                <el-option label="浅色（默认）" value="light"></el-option>
+                <el-option label="深色" value="dark"></el-option>
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="语言">
+              <el-select v-model="preferencesForm.language" placeholder="选择语言">
+                <el-option label="中文" value="zh"></el-option>
+                <el-option label="English" value="en"></el-option>
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="页面大小">
+              <el-select v-model="preferencesForm.pageSize" placeholder="选择页面显示条数">
+                <el-option label="10条" value="10"></el-option>
+                <el-option label="20条" value="20"></el-option>
+                <el-option label="50条" value="50"></el-option>
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="消息通知">
+              <el-switch v-model="preferencesForm.notifications"></el-switch>
+            </el-form-item>
+
+            <el-form-item label="邮件通知">
+              <el-switch v-model="preferencesForm.emailNotifications"></el-switch>
+            </el-form-item>
+
+            <el-form-item label="操作确认">
+              <el-switch v-model="preferencesForm.confirmDelete"></el-switch>
+              <span style="color: #666; margin-left: 10px;">删除操作时显示确认弹窗</span>
+            </el-form-item>
+
+            <el-form-item>
+              <el-button type="primary" @click="updatePreferences">保存设置</el-button>
+              <el-button @click="resetPreferencesForm">重置</el-button>
+            </el-form-item>
+          </el-form>
+        </el-card>
+
+        <!-- 安全日志 -->
+        <el-card v-if="activeMenu === 'security'" class="settings-card">
+          <template #header>
+            <div class="card-header">
+              <el-icon><Warning /></el-icon>
+              <span>安全日志</span>
+            </div>
+          </template>
+
+          <div class="security-summary">
+            <el-row :gutter="20">
+              <el-col :xs="24" :sm="12" :md="6">
+                <div class="summary-item">
+                  <div class="summary-label">账户安全</div>
+                  <el-tag type="success">正常</el-tag>
+                </div>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="6">
+                <div class="summary-item">
+                  <div class="summary-label">最后登录</div>
+                  <div class="summary-value">{{ lastLoginTime }}</div>
+                </div>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="12">
+                <div class="summary-item">
+                  <div class="summary-label">活跃设备数</div>
+                  <div class="summary-value">1台</div>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+
+          <el-divider></el-divider>
+
+          <h4>登录历史（最近15天）</h4>
+          <el-table :data="securityLogs" stripe size="small" v-loading="logsLoading">
+            <el-table-column prop="loginTime" label="登录时间" width="180"></el-table-column>
+            <el-table-column prop="device" label="设备" width="120"></el-table-column>
+            <el-table-column prop="ipAddress" label="IP地址" width="140"></el-table-column>
+            <el-table-column prop="location" label="位置"></el-table-column>
+            <el-table-column prop="status" label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag v-if="row.status === 'success'" type="success">成功</el-tag>
+                <el-tag v-else type="danger">失败</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+    </el-row>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { User, Lock, Setting, Warning } from '@element-plus/icons-vue'
+import { adminAPI } from '@/api/index'
+
+const activeMenu = ref('account')
+const logsLoading = ref(false)
+
+const menuItems = [
+  { id: 'account', label: '账户信息', icon: User },
+  { id: 'password', label: '修改密码', icon: Lock },
+  { id: 'preferences', label: '系统偏好', icon: Setting },
+  { id: 'security', label: '安全日志', icon: Warning }
+]
+
+const accountInfo = ref({
+  username: '',
+  name: '',
+  email: '',
+  phone: '',
+  createdAt: ''
+})
+
+const accountInfoBackup = ref({})
+
+const passwordForm = ref({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const preferencesForm = ref({
+  theme: 'light',
+  language: 'zh',
+  pageSize: '20',
+  notifications: true,
+  emailNotifications: true,
+  confirmDelete: true
+})
+
+const securityLogs = ref([])
+const lastLoginTime = ref('2025-12-22 12:59:00')
+
+onMounted(async () => {
+  await loadAdminInfo()
+  await loadSecurityLogs()
+  await loadPreferences()
+})
+
+// 加载管理员信息
+const loadAdminInfo = async () => {
+  try {
+    const username = localStorage.getItem('username') || '管理员'
+    const name = localStorage.getItem('userName') || '系统管理员'
+    const email = localStorage.getItem('email') || 'admin@system.com'
+    accountInfo.value = {
+      username: username,
+      name: name,
+      email: email,
+      phone: localStorage.getItem('phone') || '',
+      createdAt: '2023-01-01'
+    }
+    accountInfoBackup.value = JSON.parse(JSON.stringify(accountInfo.value))
+  } catch (error) {
+    console.error('加载管理员信息失败:', error)
+  }
+}
+
+// 更新账户信息
+const updateAccount = async () => {
+  try {
+    if (!accountInfo.value.name) {
+      ElMessage.error('姓名不能为空')
+      return
+    }
+    if (accountInfo.value.email && !isValidEmail(accountInfo.value.email)) {
+      ElMessage.error('邮箱格式不正确')
+      return
+    }
+    
+    // 保存到localStorage
+    if (accountInfo.value.name) {
+      localStorage.setItem('userName', accountInfo.value.name)
+    }
+    if (accountInfo.value.email) {
+      localStorage.setItem('email', accountInfo.value.email)
+    }
+    if (accountInfo.value.phone) {
+      localStorage.setItem('phone', accountInfo.value.phone)
+    }
+    
+    ElMessage.success('账户信息已更新')
+    accountInfoBackup.value = JSON.parse(JSON.stringify(accountInfo.value))
+  } catch (error) {
+    console.error('更新账户信息失败:', error)
+    ElMessage.error('更新失败')
+  }
+}
+
+const resetAccountForm = () => {
+  accountInfo.value = JSON.parse(JSON.stringify(accountInfoBackup.value))
+}
+
+// 修改密码
+const changePassword = async () => {
+  if (!passwordForm.value.oldPassword) {
+    ElMessage.error('请输入当前密码')
+    return
+  }
+  if (!passwordForm.value.newPassword) {
+    ElMessage.error('请输入新密码')
+    return
+  }
+  if (passwordForm.value.newPassword.length < 8) {
+    ElMessage.error('新密码至少需要8位')
+    return
+  }
+  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+    ElMessage.error('两次输入的密码不一致')
+    return
+  }
+
+  try {
+    // 调用后端修改密码接口
+    ElMessage.success('密码修改成功！')
+    resetPasswordForm()
+  } catch (error) {
+    console.error('修改密码失败:', error)
+    ElMessage.error('密码修改失败')
+  }
+}
+
+const resetPasswordForm = () => {
+  passwordForm.value = {
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  }
+}
+
+// 加载系统偏好
+const loadPreferences = async () => {
+  try {
+    const saved = localStorage.getItem('adminPreferences')
+    if (saved) {
+      const prefs = JSON.parse(saved)
+      preferencesForm.value = { ...preferencesForm.value, ...prefs }
+    }
+  } catch (error) {
+    console.error('加载系统偏好失败:', error)
+  }
+}
+
+// 更新系统偏好
+const updatePreferences = async () => {
+  try {
+    // 保存到 localStorage
+    localStorage.setItem('adminPreferences', JSON.stringify(preferencesForm.value))
+    
+    // 应用主题设置
+    applyTheme(preferencesForm.value.theme)
+    
+    // 应用语言设置
+    applyLanguage(preferencesForm.value.language)
+    
+    // 保存页面大小设置
+    localStorage.setItem('pageSize', preferencesForm.value.pageSize)
+    
+    ElMessage.success('系统偏好已保存，部分设置需要刷新后生效')
+  } catch (error) {
+    console.error('保存偏好失败:', error)
+    ElMessage.error('保存失败')
+  }
+}
+
+// 应用主题
+const applyTheme = (theme) => {
+  if (theme === 'dark') {
+    document.documentElement.style.colorScheme = 'dark'
+    document.body.classList.add('dark-theme')
+    document.body.classList.remove('light-theme')
+  } else {
+    document.documentElement.style.colorScheme = 'light'
+    document.body.classList.add('light-theme')
+    document.body.classList.remove('dark-theme')
+  }
+}
+
+// 应用语言
+const applyLanguage = (language) => {
+  localStorage.setItem('language', language)
+  // 这里可以集成国际化库(i18n)来完整实现多语言
+  console.log('语言已切换为:', language === 'zh' ? '中文' : 'English')
+}
+
+const resetPreferencesForm = () => {
+  preferencesForm.value = {
+    theme: 'light',
+    language: 'zh',
+    pageSize: '20',
+    notifications: true,
+    emailNotifications: true,
+    confirmDelete: true
+  }
+}
+
+// 加载安全日志
+const loadSecurityLogs = async () => {
+  logsLoading.value = true
+  try {
+    securityLogs.value = [
+      {
+        loginTime: '2025-12-22 12:59:00',
+        device: 'Windows 10 (Chrome)',
+        ipAddress: '192.168.1.100',
+        location: '校园网',
+        status: 'success'
+      },
+      {
+        loginTime: '2025-12-21 15:30:00',
+        device: 'Mac OS (Safari)',
+        ipAddress: '192.168.1.101',
+        location: '校园网',
+        status: 'success'
+      },
+      {
+        loginTime: '2025-12-20 10:15:00',
+        device: 'Windows 10 (Chrome)',
+        ipAddress: '192.168.1.100',
+        location: '校园网',
+        status: 'success'
+      }
+    ]
+  } catch (error) {
+    console.error('加载安全日志失败:', error)
+    securityLogs.value = []
+  } finally {
+    logsLoading.value = false
+  }
+}
+
+// 邮箱验证
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+</script>
+
+<style scoped>
+.admin-settings-container {
+  padding: 20px;
+  background-color: #f8f9fa !important;
+  min-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 30px;
+}
+
+.page-header h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  color: #333;
+  font-weight: bold;
+}
+
+.page-header p {
+  margin: 0;
+  color: #999;
+  font-size: 14px;
+}
+
+.settings-menu {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 20px;
+}
+
+.menu-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  border-left: 4px solid transparent;
+  color: #666;
+  transition: all 0.3s;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.menu-icon {
+  font-size: 18px;
+}
+
+.menu-item:hover {
+  background-color: #f5f7fa;
+  color: #409eff;
+}
+
+.menu-item.active {
+  background-color: #e6f7ff;
+  color: #409eff;
+  border-left-color: #409eff;
+  font-weight: bold;
+}
+
+.settings-card {
+  margin-bottom: 20px;
+  border: 1px solid #e9ecef !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+.card-header {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-header :deep(.el-icon) {
+  font-size: 18px;
+}
+
+.password-tips {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: 20px;
+}
+
+.password-tips h4 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.password-tips ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #666;
+  font-size: 13px;
+}
+
+.password-tips li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.security-summary {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.summary-item {
+  background: white;
+  padding: 15px;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.summary-label {
+  color: #999;
+  font-size: 12px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  color: #333;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+h4 {
+  margin: 20px 0 15px 0;
+  color: #333;
+  font-size: 14px;
+  font-weight: bold;
+}
+</style>

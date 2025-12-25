@@ -212,6 +212,7 @@ import { ArrowUp, ArrowDown } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import * as echarts from 'echarts';
 import { studentAPI } from '@/api';
+import { getUserId } from '@/utils/userUtils';
 
 const statistics = ref({
   currentGPA: 0,
@@ -234,7 +235,7 @@ const pageSize = ref(10);
 
 // 获取统计数据
 const fetchStatistics = async () => {
-  const userId = localStorage.getItem('userId')
+  const userId = getUserId()
   if (!userId) return
 
   try {

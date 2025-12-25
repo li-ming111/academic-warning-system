@@ -49,43 +49,52 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { counselorAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
-const classList = ref([
-  {
-    id: 1,
-    className: '2023级计算机科学与技术01班',
-    studentCount: 45,
-    warningCount: 5,
-    warningRate: '11%',
-    year: '2023级'
-  },
-  {
-    id: 2,
-    className: '2023级计算机科学与技术02班',
-    studentCount: 42,
-    warningCount: 3,
-    warningRate: '7%',
-    year: '2023级'
+const classList = ref([])
+const classActivities = ref([])
+
+onMounted(async () => {
+  await loadClasses()
+  await loadActivities()
+})
+
+// 加载班级列表
+const loadClasses = async () => {
+  try {
+    const counselorId = localStorage.getItem('counselorId') || getUserId()
+    if (!counselorId) return
+    const response = await counselorAPI.getClasses(counselorId)
+    if (Array.isArray(response)) {
+      classList.value = response
+    } else if (response && response.data) {
+      classList.value = response.data
+    }
+  } catch (error) {
+    console.error('加载班级列表失败:', error)
+    classList.value = []
   }
-])
+}
 
-const classActivities = ref([
-  {
-    id: 1,
-    type: '考试安排',
-    title: '2025年春学期期末考试',
-    date: '2025-12-15'
-  },
-  {
-    id: 2,
-    type: '班级活动',
-    title: '班级座谈会',
-    date: '2025-12-10'
+// 加载班级活动
+const loadActivities = async () => {
+  try {
+    const counselorId = localStorage.getItem('counselorId') || getUserId()
+    if (!counselorId) return
+    const response = await counselorAPI.getClassActivities(counselorId)
+    if (Array.isArray(response)) {
+      classActivities.value = response
+    } else if (response && response.data) {
+      classActivities.value = response.data
+    }
+  } catch (error) {
+    console.error('加载班级活动失败:', error)
+    classActivities.value = []
   }
-])
-
+}
 const viewClassDetail = (classInfo) => {
   ElMessage.info('查看班级：' + classInfo.className)
 }

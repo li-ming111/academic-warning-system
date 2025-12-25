@@ -102,7 +102,7 @@ public class UserSettingsServiceImpl extends ServiceImpl<StudentProfileMapper, S
             log.setUserId(userId);
             log.setIpAddress(ipAddress);
             log.setLoginTime(LocalDateTime.now());
-            log.setIsSuccessful(1);
+            log.setAction("LOGIN_SUCCESS");
             securityLogMapper.insert(log);
         } catch (Exception e) {
             log.error("记录登录日志失败", e);

@@ -21,6 +21,9 @@ public class ResponseHeaderFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
+        // 设置响应字符集为UTF-8
+        httpResponse.setContentType("application/json;charset=UTF-8");
+        httpResponse.setCharacterEncoding("UTF-8");
         httpResponse.setHeader("Cache-Control", "public, max-age=3600");
         httpResponse.setHeader("X-Content-Type-Options", "nosniff");
         httpResponse.setHeader("X-Frame-Options", "DENY");

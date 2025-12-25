@@ -129,6 +129,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { teacherAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const teacherName = ref('教师')
 const currentDate = ref('')
@@ -157,7 +158,7 @@ onMounted(async () => {
 // 加载教师看板数据
 const loadTeacherDashboard = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     if (!userId) return
     const response = await teacherAPI.getDashboard(userId)
     if (response) {

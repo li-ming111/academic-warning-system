@@ -13,10 +13,4 @@ public class CounselorProfile extends BaseEntity {
 
     private Long collegeId;
 
-    private String name;
-
-    private String phone;
-
-    private String email;
-
 }

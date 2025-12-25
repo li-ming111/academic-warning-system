@@ -161,6 +161,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { studentAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const activeMenu = ref('password')
 
@@ -204,7 +205,7 @@ onMounted(async () => {
 // 加载设置
 const loadSettings = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     if (!userId) return
     const response = await studentAPI.getUserSettings(userId)
     if (response) {
@@ -239,7 +240,7 @@ const changePassword = async () => {
   // SHA-256 + 盐值加密后写入 users.password
 
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     await studentAPI.changePassword(userId, passwordForm.value.oldPassword, passwordForm.value.newPassword)
     ElMessage.success('密码修改成功！')
     resetPasswordForm()
@@ -261,7 +262,7 @@ const resetPasswordForm = () => {
 // 更新隐私设置
 const updatePrivacy = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     await studentAPI.updatePrivacy(userId, parseInt(privacyForm.value.scoresVisibility))
     ElMessage.success('隐私设置已更新')
   } catch (error) {
@@ -283,7 +284,7 @@ const resetPrivacyForm = () => {
 // 导出个人数据
 const exportUserData = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     await studentAPI.exportScoresExcel(userId)
     ElMessage.info('数据导出成功，即将下载')
     // 下载文件
@@ -303,7 +304,7 @@ const exportUserData = async () => {
 // 加载安全日志
 const loadSecurityLogs = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     if (!userId) return
     const response = await studentAPI.getSecurityLogs(userId, 15)
     if (Array.isArray(response)) {
@@ -319,7 +320,7 @@ const loadSecurityLogs = async () => {
 // 更新账户信息
 const updateAccount = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     // 只能修改邮箱、手机号
     // 厦法、年管、专业等信息是禁用的
     ElMessage.success('账户信息已更新')

@@ -6,12 +6,29 @@ import com.academic.entity.*;
 import com.academic.service.CollegeService;
 import com.academic.service.MajorService;
 import com.academic.service.UserService;
+import com.academic.service.ClassManagementRequestService;
+import com.academic.service.DataExportService;
 import com.academic.mapper.StudentProfileMapper;
+import com.academic.mapper.TeacherProfileMapper;
+import com.academic.mapper.CounselorProfileMapper;
 import com.academic.mapper.AcademicWarningMapper;
+import com.academic.mapper.CourseMapper;
+import com.academic.mapper.AuditLogMapper;
+import com.academic.mapper.NotificationMapper;
+import com.academic.mapper.CommunicationLogMapper;
+import com.academic.mapper.AdminProfileMapper;
+import com.academic.mapper.ScoreLogMapper;
+import com.academic.mapper.FeedbackMapper;
+import com.academic.mapper.SecurityLogMapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,16 +41,68 @@ public class AdminController {
     private final CollegeService collegeService;
     private final MajorService majorService;
     private final UserService userService;
+    private final ClassManagementRequestService classManagementRequestService;
     private final StudentProfileMapper studentProfileMapper;
+    private final TeacherProfileMapper teacherProfileMapper;
+    private final CounselorProfileMapper counselorProfileMapper;
+    private final AdminProfileMapper adminProfileMapper;
     private final AcademicWarningMapper warningMapper;
+    private final CourseMapper courseMapper;
+    private final AuditLogMapper auditLogMapper;
+    private final NotificationMapper notificationMapper;
+    private final CommunicationLogMapper communicationLogMapper;
+    private final ScoreLogMapper scoreLogMapper;
+    private final FeedbackMapper feedbackMapper;
+    private final SecurityLogMapper securityLogMapper;
+    private final DataExportService dataExportService;
+    
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     public AdminController(CollegeService collegeService, MajorService majorService, UserService userService,
-                           StudentProfileMapper studentProfileMapper, AcademicWarningMapper warningMapper) {
+                           ClassManagementRequestService classManagementRequestService,
+                           StudentProfileMapper studentProfileMapper, TeacherProfileMapper teacherProfileMapper,
+                           CounselorProfileMapper counselorProfileMapper, AdminProfileMapper adminProfileMapper, AcademicWarningMapper warningMapper, CourseMapper courseMapper,
+                           AuditLogMapper auditLogMapper, NotificationMapper notificationMapper, CommunicationLogMapper communicationLogMapper,
+                           ScoreLogMapper scoreLogMapper, FeedbackMapper feedbackMapper, SecurityLogMapper securityLogMapper,
+                           DataExportService dataExportService) {
         this.collegeService = collegeService;
         this.majorService = majorService;
         this.userService = userService;
+        this.classManagementRequestService = classManagementRequestService;
         this.studentProfileMapper = studentProfileMapper;
+        this.teacherProfileMapper = teacherProfileMapper;
+        this.counselorProfileMapper = counselorProfileMapper;
+        this.adminProfileMapper = adminProfileMapper;
         this.warningMapper = warningMapper;
+        this.courseMapper = courseMapper;
+        this.auditLogMapper = auditLogMapper;
+        this.notificationMapper = notificationMapper;
+        this.communicationLogMapper = communicationLogMapper;
+        this.scoreLogMapper = scoreLogMapper;
+        this.feedbackMapper = feedbackMapper;
+        this.securityLogMapper = securityLogMapper;
+        this.dataExportService = dataExportService;
+    }
+
+    /**
+     * 获取当前登录用户ID
+     */
+    private Long getUserId() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                Object principal = authentication.getPrincipal();
+                if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+                    String username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+                    User user = userService.getOne(new QueryWrapper<User>().eq("username", username));
+                    return user != null ? user.getId() : null;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("获取当前用户ID失败", e);
+        }
+        return null;
     }
 
     /**
@@ -119,6 +188,20 @@ public class AdminController {
     }
 
     /**
+     * 获取所有专业
+     */
+    @GetMapping("/majors")
+    public ApiResponse<List<Major>> getMajors() {
+        try {
+            List<Major> majors = majorService.list();
+            return ApiResponse.success(majors);
+        } catch (Exception e) {
+            log.error("获取专业列表失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
      * 获取学院的所有专业
      */
     @GetMapping("/colleges/{collegeId}/majors")
@@ -179,16 +262,170 @@ public class AdminController {
      * 获取所有用户（分页）
      */
     @GetMapping("/users")
-    public ApiResponse<List<User>> getUsers(
+    public ApiResponse<List<Map<String, Object>>> getUsers(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
         try {
             QueryWrapper<User> queryWrapper = new QueryWrapper<>();
             queryWrapper.orderByDesc("created_at");
             List<User> users = userService.list(queryWrapper);
-            return ApiResponse.success(users.stream().limit(size).skip((long) (page - 1) * size).toList());
+            List<User> paginated = users.stream().skip((long) (page - 1) * size).limit(size).toList();
+            
+            List<Map<String, Object>> result = paginated.stream().map(user -> {
+                log.info("用户: id={}, username={}, role={}, status={}, roleType={}", user.getId(), user.getUsername(), user.getRole(), user.getStatus(), user.getRole() != null ? user.getRole().getClass() : null);
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", user.getId());
+                map.put("username", user.getUsername());
+                map.put("name", user.getName());
+                map.put("email", user.getEmail());
+                map.put("phone", user.getPhone());
+                map.put("role", String.valueOf(user.getRole()));
+                map.put("status", user.getStatus() != null ? user.getStatus() : 1);
+                map.put("password", user.getPassword());
+                map.put("updatedAt", user.getUpdatedAt());
+                
+                // 根据角色获取学院名称和学号/工号
+                String collegeName = null;
+                if (user.getRole() == 1) { // 学生
+                    StudentProfile student = studentProfileMapper.selectOne(
+                        new QueryWrapper<StudentProfile>().eq("user_id", user.getId()));
+                    if (student != null && student.getCollegeId() != null) {
+                        College college = collegeService.getById(student.getCollegeId());
+                        if (college != null) {
+                            collegeName = college.getName();
+                        }
+                        // 添加学号
+                        if (student.getStudentId() != null) {
+                            map.put("studentId", student.getStudentId());
+                        }
+                    }
+                } else if (user.getRole() == 2) { // 教师
+                    TeacherProfile teacher = teacherProfileMapper.selectOne(
+                        new QueryWrapper<TeacherProfile>().eq("user_id", user.getId()));
+                    if (teacher != null && teacher.getCollegeId() != null) {
+                        College college = collegeService.getById(teacher.getCollegeId());
+                        if (college != null) {
+                            collegeName = college.getName();
+                        }
+                        // 添加工号（如果teacher_profile表中有该字段）
+                        // map.put("jobNumber", teacher.getJobNumber());
+                    }
+                } else if (user.getRole() == 4) { // 辅导员
+                    CounselorProfile counselor = counselorProfileMapper.selectOne(
+                        new QueryWrapper<CounselorProfile>().eq("user_id", user.getId()));
+                    if (counselor != null && counselor.getCollegeId() != null) {
+                        College college = collegeService.getById(counselor.getCollegeId());
+                        if (college != null) {
+                            collegeName = college.getName();
+                        }
+                        // 添加工号（如果counselor_profile表中有该字段）
+                        // map.put("jobNumber", counselor.getJobNumber());
+                    }
+                }
+                                
+                if (collegeName != null) {
+                    map.put("collegeName", collegeName);
+                }
+                return map;
+            }).toList();
+            return ApiResponse.success(result);
         } catch (Exception e) {
             log.error("获取用户列表失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 更新用户信息
+     * 如果更新了学号/工号，则自动更新用户名
+     */
+    @PutMapping("/users/{userId}")
+    public ApiResponse<String> updateUser(@PathVariable Long userId, @RequestBody Map<String, Object> params) {
+        try {
+            User user = userService.getById(userId);
+            if (user == null) {
+                return ApiResponse.error(404, "用户不存在");
+            }
+
+            // 根据用户角色处理学号/工号更新，并同步更新username
+            int userRole = user.getRole();
+            String newUsername = null;
+            
+            if (userRole == 1) {
+                // 学生：更新学号时，同步更新username
+                if (params.containsKey("studentId")) {
+                    String studentId = (String) params.get("studentId");
+                    newUsername = studentId;
+                    // 更新student_profile表
+                    try {
+                        StudentProfile studentProfile = studentProfileMapper.selectOne(
+                            new QueryWrapper<StudentProfile>().eq("user_id", userId)
+                        );
+                        if (studentProfile != null) {
+                            studentProfile.setStudentId(studentId);
+                            studentProfileMapper.updateById(studentProfile);
+                            log.info("更新学生档案学号: userId={}, studentId={}", userId, studentId);
+                        }
+                    } catch (Exception ex) {
+                        log.warn("更新学生档案失败", ex);
+                    }
+                }
+            } else if (userRole == 2) {
+                // 教师：更新工号时，同步更新username
+                if (params.containsKey("jobNumber")) {
+                    String jobNumber = (String) params.get("jobNumber");
+                    newUsername = jobNumber;
+                    // 更新teacher_profile表中的工号（如果存在该字段）
+                    // 注意：当前teacher_profile中可能没有job_number字段，需要根据实际情况调整
+                    try {
+                        // 这里可以添加对teacher_profile的更新逻辑
+                        log.info("更新教师工号: userId={}, jobNumber={}", userId, jobNumber);
+                    } catch (Exception ex) {
+                        log.warn("更新教师档案失败", ex);
+                    }
+                }
+            } else if (userRole == 4) {
+                // 辅导员：更新工号时，同步更新username
+                if (params.containsKey("jobNumber")) {
+                    String jobNumber = (String) params.get("jobNumber");
+                    newUsername = jobNumber;
+                    // 更新counselor_profile表中的工号（如果存在该字段）
+                    try {
+                        // 这里可以添加对counselor_profile的更新逻辑
+                        log.info("更新辅导员工号: userId={}, jobNumber={}", userId, jobNumber);
+                    } catch (Exception ex) {
+                        log.warn("更新辅导员档案失败", ex);
+                    }
+                }
+            }
+            
+            // 如果有新的username，更新用户表的username
+            if (newUsername != null && !newUsername.isEmpty()) {
+                user.setUsername(newUsername);
+                log.info("同步更新用户名: userId={}, username={}", userId, newUsername);
+            }
+            
+            // 更新用户基本信息
+            if (params.containsKey("email")) {
+                user.setEmail((String) params.get("email"));
+            }
+            if (params.containsKey("phone")) {
+                user.setPhone((String) params.get("phone"));
+            }
+            if (params.containsKey("name")) {
+                user.setName((String) params.get("name"));
+            }
+            if (params.containsKey("password")) {
+                user.setPassword((String) params.get("password"));
+            }
+            if (params.containsKey("status")) {
+                user.setStatus(((Number) params.get("status")).intValue());
+            }
+
+            userService.updateById(user);
+            return ApiResponse.success("用户已更新");
+        } catch (Exception e) {
+            log.error("更新用户失败", e);
             return ApiResponse.error(e.getMessage());
         }
     }
@@ -290,6 +527,29 @@ public class AdminController {
     }
 
     /**
+     * 获取所有课程
+     */
+    @GetMapping("/courses")
+    public ApiResponse<List<Map<String, Object>>> getCourses() {
+        try {
+            List<Course> courses = courseMapper.selectList(null);
+            List<Map<String, Object>> result = courses.stream().map(course -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", course.getId());
+                map.put("name", course.getName());
+                map.put("credits", course.getCredits());
+                map.put("isElective", "选修".equals(course.getType()) ? 1 : 0);
+                map.put("courseType", "选修".equals(course.getType()) ? "选修课" : "必修课");
+                return map;
+            }).toList();
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("获取课程列表失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
      * 获取数据统计
      */
     @GetMapping("/statistics")
@@ -300,8 +560,12 @@ public class AdminController {
             stats.put("totalTeachers", userService.count(new QueryWrapper<User>().eq("role", 2)));
             stats.put("totalWarnings", warningMapper.selectCount(null));
             stats.put("totalColleges", collegeService.count());
+            stats.put("totalCourses", courseMapper.selectCount(null));
             stats.put("redWarnings", warningMapper.selectCount(new QueryWrapper<AcademicWarning>().eq("warning_level", "red")));
             stats.put("yellowWarnings", warningMapper.selectCount(new QueryWrapper<AcademicWarning>().eq("warning_level", "yellow")));
+            stats.put("highWarnings", warningMapper.selectCount(new QueryWrapper<AcademicWarning>().eq("warning_level", "red")));
+            stats.put("mediumWarnings", warningMapper.selectCount(new QueryWrapper<AcademicWarning>().eq("warning_level", "yellow")));
+            stats.put("lowWarnings", 0L);
             return ApiResponse.success(stats);
         } catch (Exception e) {
             log.error("获取统计数据失败", e);
@@ -408,6 +672,164 @@ public class AdminController {
             log.error("分配角色失败", e);
             return ApiResponse.error(e.getMessage());
         }
+    }
+
+    /**
+     * 禁用用户
+     */
+    @PostMapping("/users/{userId}/disable")
+    public ApiResponse<String> disableUser(@PathVariable Long userId) {
+        try {
+            User user = userService.getById(userId);
+            if (user == null) {
+                return ApiResponse.error(404, "用户不存在");
+            }
+            user.setStatus(0);
+            userService.updateById(user);
+            return ApiResponse.success("用户已禁用");
+        } catch (Exception e) {
+            log.error("禁用用户失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 启用用户
+     */
+    @PostMapping("/users/{userId}/enable")
+    public ApiResponse<String> enableUser(@PathVariable Long userId) {
+        try {
+            User user = userService.getById(userId);
+            if (user == null) {
+                return ApiResponse.error(404, "用户不存在");
+            }
+            user.setStatus(1);
+            userService.updateById(user);
+            return ApiResponse.success("用户已启用");
+        } catch (Exception e) {
+            log.error("启用用户失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 删除用户
+     */
+    @DeleteMapping("/users/{userId}")
+    public ApiResponse<String> deleteUser(@PathVariable Long userId) {
+        try {
+            User user = userService.getById(userId);
+            if (user == null) {
+                return ApiResponse.error(404, "用户不存在");
+            }
+            
+            // 情形是复杂的，最为会的做法是：
+            // 1. 先看能否直接使用二sql直接执行delete
+            // 2. 不行的话，看能否弆外键校驗禁用
+            // 3. 最后仅死力删除
+            
+            // 使用一个助手方法处理，以䅍禁用外键检查后删除
+            deleteUserWithForeignKeyHandling(userId);
+            return ApiResponse.success("用户已删除");
+        } catch (Exception e) {
+            log.error("删除用户失败", e);
+            return ApiResponse.error("删除用户失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 应对外键约束，使用原生SQL秱用外键检查后执行删除
+     */
+    private void deleteUserWithForeignKeyHandling(Long userId) {
+        // 使用原生SQL，兆行外键检查后删除用户及其所有关联数据
+        try {
+            // 第一步：先尝试看用户是否存在
+            User user = userService.getById(userId);
+            if (user == null) {
+                throw new RuntimeException("用户不存在");
+            }
+            
+            // 第二步：删除所有与用户相关的数据
+            deleteRelatedData(userId);
+            
+            // 第三步：秱用外键检查后，使用原生SQL删除用户
+            // 应对MySQL，直接秱用并删除
+            try {
+                // 秱用外键检查
+                jdbcTemplate.update("SET FOREIGN_KEY_CHECKS=0");
+                
+                // 删除用户
+                int result = jdbcTemplate.update("DELETE FROM users WHERE id = ?", userId);
+                log.info("删除用户 {} 成功, 影响 {} 行", userId, result);
+                
+                // 重新启用外键检查
+                jdbcTemplate.update("SET FOREIGN_KEY_CHECKS=1");
+            } catch (Exception ex) {
+                log.error("删除用户粗表失败", ex);
+                // 重新启用外键检查，不论是否失败
+                try {
+                    jdbcTemplate.update("SET FOREIGN_KEY_CHECKS=1");
+                } catch (Exception e) {
+                    log.warn("重新启用外键检查失败", e);
+                }
+                throw new RuntimeException("删除用户失败: " + ex.getMessage(), ex);
+            }
+        } catch (Exception e) {
+            log.error("删除用户外键校驗处理失败", e);
+            throw new RuntimeException("删除用户失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 删除所有与用户相关的数据
+     */
+    private void deleteRelatedData(Long userId) {
+        log.info("开始删除用户相关数据, userId: {}", userId);
+        
+        // 使用原生SQL删除所有与用户ID相关的数据
+        // 对于scores_logs表，它可能不存在，所以也需要try-catch
+        String[] sqlStatements = {
+            "DELETE FROM security_log WHERE user_id = ?",
+            "DELETE FROM notifications WHERE user_id = ?",
+            "DELETE FROM communication_logs WHERE teacher_id = ?",
+            "DELETE FROM audit_logs WHERE user_id = ?",
+            "DELETE FROM feedbacks WHERE teacher_id = ?",
+            "DELETE FROM admin_profile WHERE user_id = ?",
+            "DELETE FROM student_profile WHERE user_id = ?",
+            "DELETE FROM teacher_profile WHERE user_id = ?",
+            "DELETE FROM counselor_profile WHERE user_id = ?"
+        };
+        
+        for (String sql : sqlStatements) {
+            try {
+                int count = jdbcTemplate.update(sql, userId);
+                log.info("执行 SQL: {} 删除 {} 条", sql, count);
+            } catch (Exception ex) {
+                log.warn("执行 SQL 失败: {}", sql, ex);
+            }
+        }
+        
+        // 对于score_logs表單独处理，因为它可能不存在
+        // 首先检查表是否存在
+        try {
+            String checkTableSql = "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='academic_warning_system' AND TABLE_NAME='score_logs'";
+            Integer count = jdbcTemplate.queryForObject(checkTableSql, Integer.class);
+            if (count != null && count > 0) {
+                // 表存在，尝试删除
+                try {
+                    int deleteCount = jdbcTemplate.update("DELETE FROM score_logs WHERE modified_by = ?", userId);
+                    log.info("执行 SQL: DELETE FROM score_logs WHERE modified_by = ? 删除 {} 条", deleteCount);
+                } catch (Exception ex) {
+                    log.warn("执行 SQL: DELETE FROM score_logs WHERE modified_by = ? 失败", ex);
+                }
+            } else {
+                log.info("score_logs 表不存在，跳过删除");
+            }
+        } catch (Exception ex) {
+            log.warn("检查 score_logs 表是否存在失败", ex);
+        }
+        
+        log.info("完成删除用户相关数据, userId: {}", userId);
     }
 
     /**
@@ -656,15 +1078,13 @@ public class AdminController {
      * 导出学生数据为Excel
      */
     @GetMapping("/export/students")
-    public ApiResponse<Map<String, Object>> exportStudents() {
+    public ApiResponse<List<Map<String, Object>>> exportStudents() {
         try {
-            // 实际应用中会使用EasyExcel的模板导出
-            Map<String, Object> result = new HashMap<>();
-            result.put("file_name", "students_" + System.currentTimeMillis() + ".xlsx");
-            result.put("total_count", studentProfileMapper.selectCount(null));
-            result.put("download_url", "/api/admin/download/students");
-            
-            return ApiResponse.success(result);
+            List<Map<String, Object>> data = dataExportService.exportStudents();
+            // 记录导出历史
+            String fileName = "学生数据_" + System.currentTimeMillis() + ".xlsx";
+            dataExportService.recordExport("学生数据", fileName, data.size(), getUserId());
+            return ApiResponse.success(data);
         } catch (Exception e) {
             log.error("导出学生数据失败", e);
             return ApiResponse.error(e.getMessage());
@@ -675,14 +1095,13 @@ public class AdminController {
      * 导出成绩数据为Excel
      */
     @GetMapping("/export/scores")
-    public ApiResponse<Map<String, Object>> exportScores(@RequestParam(required = false) Long courseId) {
+    public ApiResponse<List<Map<String, Object>>> exportScores(@RequestParam(required = false) Long courseId) {
         try {
-            Map<String, Object> result = new HashMap<>();
-            result.put("file_name", "scores_" + System.currentTimeMillis() + ".xlsx");
-            result.put("record_count", 100); // 假设这些数据
-            result.put("download_url", "/api/admin/download/scores");
-            
-            return ApiResponse.success(result);
+            List<Map<String, Object>> data = dataExportService.exportScores();
+            // 记录导出历史
+            String fileName = "成绩数据_" + System.currentTimeMillis() + ".xlsx";
+            dataExportService.recordExport("成绩数据", fileName, data.size(), getUserId());
+            return ApiResponse.success(data);
         } catch (Exception e) {
             log.error("导出成绩数据失败", e);
             return ApiResponse.error(e.getMessage());
@@ -693,16 +1112,13 @@ public class AdminController {
      * 导出预警数据为Excel
      */
     @GetMapping("/export/warnings")
-    public ApiResponse<Map<String, Object>> exportWarnings() {
+    public ApiResponse<List<Map<String, Object>>> exportWarnings() {
         try {
-            java.util.List<AcademicWarning> warnings = warningMapper.selectList(null);
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("file_name", "warnings_" + System.currentTimeMillis() + ".xlsx");
-            result.put("record_count", warnings.size());
-            result.put("download_url", "/api/admin/download/warnings");
-            
-            return ApiResponse.success(result);
+            List<Map<String, Object>> data = dataExportService.exportWarnings();
+            // 记录导出历史
+            String fileName = "预警数据_" + System.currentTimeMillis() + ".xlsx";
+            dataExportService.recordExport("预警数据", fileName, data.size(), getUserId());
+            return ApiResponse.success(data);
         } catch (Exception e) {
             log.error("导出预警数据失败", e);
             return ApiResponse.error(e.getMessage());
@@ -713,20 +1129,13 @@ public class AdminController {
      * 导出管理员、教师、辅导员数据
      */
     @GetMapping("/export/users")
-    public ApiResponse<Map<String, Object>> exportUsers(@RequestParam(required = false) Integer role) {
+    public ApiResponse<List<Map<String, Object>>> exportUsers(@RequestParam(required = false) Integer role) {
         try {
-            QueryWrapper<User> qw = new QueryWrapper<>();
-            if (role != null) {
-                qw.eq("role", role);
-            }
-            java.util.List<User> users = userService.list(qw);
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("file_name", "users_" + System.currentTimeMillis() + ".xlsx");
-            result.put("record_count", users.size());
-            result.put("download_url", "/api/admin/download/users");
-            
-            return ApiResponse.success(result);
+            List<Map<String, Object>> data = dataExportService.exportUsers();
+            // 记录导出历史
+            String fileName = "用户数据_" + System.currentTimeMillis() + ".xlsx";
+            dataExportService.recordExport("用户数据", fileName, data.size(), getUserId());
+            return ApiResponse.success(data);
         } catch (Exception e) {
             log.error("导出用户数据失败", e);
             return ApiResponse.error(e.getMessage());
@@ -893,4 +1302,76 @@ public class AdminController {
         }
     }
 
+    /**
+     * 获取导出历史
+     */
+    @GetMapping("/export/history")
+    public ApiResponse<List<ExportHistory>> getExportHistory() {
+        try {
+            List<ExportHistory> history = dataExportService.getExportHistory();
+            return ApiResponse.success(history);
+        } catch (Exception e) {
+            log.error("获取导出历史失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 删除导出历史
+     */
+    @DeleteMapping("/export/{id}")
+    public ApiResponse<Void> deleteExport(@PathVariable Long id) {
+        try {
+            dataExportService.deleteExport(id);
+            return ApiResponse.success(null);
+        } catch (Exception e) {
+            log.error("删除导出历史失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取待处理的班级管理申请列表
+     */
+    @GetMapping("/class-management/pending-requests")
+    public ApiResponse<List<Map<String, Object>>> getPendingClassManagementRequests() {
+        try {
+            List<Map<String, Object>> requests = classManagementRequestService.getPendingRequests();
+            return ApiResponse.success(requests);
+        } catch (Exception e) {
+            log.error("获取待处理班级管理申请失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 批准班级管理申请
+     */
+    @PostMapping("/class-management/approve/{requestId}")
+    public ApiResponse<String> approveClassManagementRequest(@PathVariable Long requestId) {
+        try {
+            classManagementRequestService.approveRequest(requestId);
+            return ApiResponse.success("申请已批准");
+        } catch (Exception e) {
+            log.error("批准班级管理申请失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 拒绝班级管理申请
+     */
+    @PostMapping("/class-management/reject/{requestId}")
+    public ApiResponse<String> rejectClassManagementRequest(@PathVariable Long requestId, @RequestBody Map<String, String> params) {
+        try {
+            String rejectReason = params.get("reason");
+            classManagementRequestService.rejectRequest(requestId, rejectReason);
+            return ApiResponse.success("申请已拒绝");
+        } catch (Exception e) {
+            log.error("拒绝班级管理申请失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
 }
+

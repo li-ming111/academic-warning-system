@@ -116,6 +116,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { studentAPI } from '../api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const messages = ref([])
 const unreadCount = ref(0)
@@ -175,7 +176,7 @@ const formatDate = (dateString) => {
 
 const loadMessages = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     if (!userId) {
       ElMessage.error('请先登录')
       return

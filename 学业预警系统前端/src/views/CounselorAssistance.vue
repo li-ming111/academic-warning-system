@@ -120,6 +120,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { counselorAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 
 const stats = ref({
   totalPlans: 0,
@@ -162,7 +163,7 @@ onMounted(async () => {
 
 const loadAssistancePlans = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     const counselorId = localStorage.getItem('counselorId') || userId
     if (!counselorId) return
     

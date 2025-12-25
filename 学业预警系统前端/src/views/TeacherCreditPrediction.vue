@@ -150,6 +150,7 @@
 import { ref, onMounted, computed } from 'vue'
 import * as echarts from 'echarts'
 import { teacherAPI } from '@/api/index'
+import { getUserId } from '@/utils/userUtils'
 import { ElMessage } from 'element-plus'
 
 const selectedCourse = ref('')
@@ -178,7 +179,7 @@ onMounted(async () => {
 // 加载课程列表
 const loadCourses = async () => {
   try {
-    const userId = localStorage.getItem('userId')
+    const userId = getUserId()
     const teacherId = localStorage.getItem('teacherId') || userId
     if (!teacherId) return
     const response = await teacherAPI.getCourses(teacherId)

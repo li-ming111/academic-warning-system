@@ -5,6 +5,7 @@ import com.academic.dto.TeacherDashboardResponse;
 import com.academic.entity.*;
 import com.academic.service.TeacherService;
 import com.academic.service.WarningService;
+import com.academic.service.ClassManagementRequestService;
 import com.academic.mapper.StudentProfileMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -21,12 +22,15 @@ public class TeacherController {
     private final TeacherService teacherService;
     private final WarningService warningService;
     private final StudentProfileMapper studentProfileMapper;
+    private final ClassManagementRequestService classManagementRequestService;
 
     public TeacherController(TeacherService teacherService, WarningService warningService,
-                             StudentProfileMapper studentProfileMapper) {
+                             StudentProfileMapper studentProfileMapper,
+                             ClassManagementRequestService classManagementRequestService) {
         this.teacherService = teacherService;
         this.warningService = warningService;
         this.studentProfileMapper = studentProfileMapper;
+        this.classManagementRequestService = classManagementRequestService;
     }
 
     /**
@@ -182,9 +186,11 @@ public class TeacherController {
      * 查询选修课
      */
     @GetMapping("/enrollments")
-    public ApiResponse<List<Enrollment>> getEnrollments(@RequestParam(required = false) Long courseId) {
+    public ApiResponse<List<Enrollment>> getEnrollments(
+            @RequestParam(required = false) Long teacherId,
+            @RequestParam(required = false) Long courseId) {
         try {
-            List<Enrollment> enrollments = teacherService.getEnrollments(null, courseId != null ? courseId.toString() : null);
+            List<Enrollment> enrollments = teacherService.getEnrollments(teacherId, courseId != null ? courseId.toString() : null);
             return ApiResponse.success(enrollments);
         } catch (Exception e) {
             log.error("查询选修课失败", e);
@@ -636,6 +642,38 @@ public class TeacherController {
             return ApiResponse.success("回复成功");
         } catch (Exception e) {
             log.error("回复反馈失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 教师申请管理班级
+     */
+    @PostMapping("/class-management/request")
+    public ApiResponse<Long> requestClassManagement(@RequestBody Map<String, Object> params) {
+        try {
+            Long teacherId = ((Number) params.get("teacherId")).longValue();
+            Long classId = ((Number) params.get("classId")).longValue();
+            String reason = (String) params.get("reason");
+
+            Long requestId = classManagementRequestService.submitRequest(teacherId, classId, reason);
+            return ApiResponse.success(requestId);
+        } catch (Exception e) {
+            log.error("申请班级管理失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取教师的班级管理申请列表
+     */
+    @GetMapping("/class-management/requests")
+    public ApiResponse<List<ClassManagementRequest>> getMyClassRequests(@RequestParam Long teacherId) {
+        try {
+            List<ClassManagementRequest> requests = classManagementRequestService.getTeacherRequests(teacherId);
+            return ApiResponse.success(requests);
+        } catch (Exception e) {
+            log.error("获取班级管理申请失败", e);
             return ApiResponse.error(e.getMessage());
         }
     }
