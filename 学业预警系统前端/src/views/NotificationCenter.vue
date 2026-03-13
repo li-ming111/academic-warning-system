@@ -3,7 +3,7 @@
     <el-card class="box-card">
       <template #header>
         <div class="card-header">
-          <span class="title">🔔 通知中心</span>
+          <span class="title">通知中心</span>
           <div class="header-buttons">
             <el-button v-if="unreadCount > 0" type="primary" size="small" @click="markAllAsRead">
               全部已读

@@ -1,7 +1,7 @@
 <template>
   <div class="counselor-students">
     <div class="page-header">
-      <h1>👥 学生管理</h1>
+      <h1>学生管理</h1>
       <p>班级学生列表、搜索和管理</p>
     </div>
 
@@ -14,8 +14,8 @@
         <el-option label="班级C" value="C"></el-option>
         <el-option label="班级D" value="D"></el-option>
       </el-select>
-      <el-button type="primary" @click="searchStudents">🔍 搜索</el-button>
-      <el-button @click="exportStudents">📥 导出</el-button>
+      <el-button type="primary" @click="searchStudents">搜索</el-button>
+      <el-button @click="exportStudents">导出</el-button>
     </div>
 
     <!-- 学生表格 -->
@@ -64,7 +64,7 @@
           <el-input :value="notificationForm.receiver" disabled></el-input>
         </el-form-item>
         <el-form-item label="通知内容">
-          <el-input v-model="notificationForm.content" type="textarea" rows="4" placeholder="请输入通知内容..."></el-input>
+          <el-input v-model="notificationForm.content" type="textarea" :rows="4" placeholder="请输入通知内容..."></el-input>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -103,7 +103,7 @@ const loadStudents = async () => {
     const counselorId = localStorage.getItem('counselorId') || userId
     if (!counselorId) return
     const response = await counselorAPI.getStudents(counselorId)
-    if (response && response.code === 0) {
+    if (response && response.code === 200) {
       studentList.value = response.data || []
     } else if (Array.isArray(response)) {
       studentList.value = response
@@ -142,7 +142,9 @@ const viewStudent = (row) => {
 }
 
 const sendNotification = (row) => {
-  notificationForm.value.receiver = row.studentName
+  console.log('学生数据:', row)
+  selectedStudent.value = row
+  notificationForm.value.receiver = row.name || row.studentName
   notificationDialogVisible.value = true
 }
 
@@ -153,9 +155,10 @@ const submitNotification = async () => {
   }
   try {
     const data = {
-      student_ids: [selectedStudent.value.id],
+      student_ids: [selectedStudent.value.userId || selectedStudent.value.studentId || selectedStudent.value.id],
       message: notificationForm.value.content
     }
+    console.log('发送通知数据:', data)
     await counselorAPI.notifyStudents(data)
     ElMessage.success('通知已发送')
     notificationDialogVisible.value = false

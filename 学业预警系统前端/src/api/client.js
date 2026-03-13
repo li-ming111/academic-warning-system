@@ -29,6 +29,11 @@ apiClient.interceptors.request.use(
 // 响应拦截器
 apiClient.interceptors.response.use(
   (response) => {
+    // 对于blob类型的响应，直接返回response.data
+    if (response.config.responseType === 'blob') {
+      return response.data
+    }
+    
     if (response.data && response.data.code !== undefined) {
       if (response.data.code === 200) {
         return response.data.data

@@ -1,38 +1,46 @@
 <template>
   <div class="teacher-courses">
-    <div class="page-header">
-      <h1>📚 学生选修课管理</h1>
-      <p>查看学生选修课、推荐选课、学分核查和沟通记录</p>
+    <!-- 欢迎区域 -->
+    <div class="welcome-section">
+      <div class="welcome-card">
+        <div class="welcome-content">
+          <h1>选修课管理</h1>
+          <p>查看学生选修课、推荐选课、学分核查</p>
+        </div>
+      </div>
     </div>
 
     <!-- 统计数据 -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon">📚</div>
-        <div class="stat-content">
-          <div class="stat-label">选修课总数</div>
-          <div class="stat-number">12</div>
+    <div class="stats-section">
+      <h2 class="section-title">教学数据概览</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"></div>
+          <div class="stat-content">
+            <div class="stat-label">选修课总数</div>
+            <div class="stat-number">{{ courseStats.totalCourses }}</div>
+          </div>
         </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">👥</div>
-        <div class="stat-content">
-          <div class="stat-label">选修学生</div>
-          <div class="stat-number">120</div>
+        <div class="stat-card">
+          <div class="stat-icon"></div>
+          <div class="stat-content">
+            <div class="stat-label">选修学生</div>
+            <div class="stat-number">{{ courseStats.totalStudents }}</div>
+          </div>
         </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">⭐</div>
-        <div class="stat-content">
-          <div class="stat-label">平均评分</div>
-          <div class="stat-number">4.5</div>
+        <div class="stat-card">
+          <div class="stat-icon"></div>
+          <div class="stat-content">
+            <div class="stat-label">平均评分</div>
+            <div class="stat-number">{{ courseStats.averageRating }}</div>
+          </div>
         </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">✅</div>
-        <div class="stat-content">
-          <div class="stat-label">及格率</div>
-          <div class="stat-number">95%</div>
+        <div class="stat-card">
+          <div class="stat-icon"></div>
+          <div class="stat-content">
+            <div class="stat-label">及格率</div>
+            <div class="stat-number">{{ courseStats.passRate }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -40,7 +48,7 @@
     <!-- 选修课列表 -->
     <el-card style="margin-bottom: 20px;">
       <template #header>
-        <div class="card-header">📖 选修课列表</div>
+        <div class="card-header">选修课列表</div>
       </template>
 
       <el-table :data="courseList" stripe>
@@ -74,7 +82,7 @@
     <!-- 学生选课情况 -->
     <el-card style="margin-bottom: 20px;">
       <template #header>
-        <div class="card-header">👤 学生选修情况</div>
+        <div class="card-header">学生选修情况</div>
       </template>
 
       <el-table :data="studentCourses" stripe>
@@ -98,7 +106,7 @@
     <!-- 学分统计 -->
     <el-card>
       <template #header>
-        <div class="card-header">📊 学分核查</div>
+        <div class="card-header">学分核查</div>
       </template>
 
       <el-table :data="creditStats" stripe>
@@ -151,9 +159,11 @@
         <p><strong>课程：</strong>{{ selectedStudent.courseName }}</p>
         <p><strong>沟通记录：</strong></p>
         <el-timeline>
-          <el-timeline-item v-for="i in 2" :key="i" :timestamp="`2024-12-0${i}`">
-            <p v-if="i === 1">学生对NLP感兴趣，推荐其选修《自然语言处理》课程</p>
-            <p v-else>学生已确认选修，待注册</p>
+          <el-timeline-item v-for="(record, index) in communicationRecords" :key="index" :timestamp="record.timestamp">
+            <p>{{ record.content }}</p>
+          </el-timeline-item>
+          <el-timeline-item v-if="communicationRecords.length === 0">
+            <p>暂无沟通记录</p>
           </el-timeline-item>
         </el-timeline>
         <el-input v-model="newCommunication" type="textarea" rows="3" placeholder="输入新的沟通内容..."></el-input>
@@ -194,6 +204,8 @@ const selectedStudent = ref({
   courseName: ''
 })
 
+const communicationRecords = ref([])
+
 onMounted(async () => {
   await loadCourseData()
 })
@@ -232,15 +244,15 @@ const loadCourseData = async () => {
       courseList.value = Array.from(coursesMap.values()).map(course => ({
         ...course,
         enrollmentCount: course.students.length,
-        passRate: '95%',
-        rating: 4.5
+        passRate: '0%',
+        rating: 0
       }))
       
       // 更新统计信息
       courseStats.value.totalCourses = courseList.value.length
       courseStats.value.totalStudents = totalStudents
-      courseStats.value.averageRating = 4.5
-      courseStats.value.passRate = '95%'
+      courseStats.value.averageRating = 0
+      courseStats.value.passRate = '0%'
     }
   } catch (error) {
     console.error('加载课程数据失败:', error)
@@ -282,8 +294,10 @@ const submitRecommend = async () => {
   }
 }
 
-const viewCommunication = (row) => {
+const viewCommunication = async (row) => {
   selectedStudent.value = row
+  // 加载沟通记录
+  communicationRecords.value = [] // 暂时设置为空数组
   communicationDialogVisible.value = true
 }
 
@@ -312,24 +326,68 @@ const addCommunication = async () => {
 
 <style scoped>
 .teacher-courses {
-  padding: 24px;
-  background: #f5f7fa;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
   min-height: 100vh;
 }
 
-.page-header {
-  margin-bottom: 28px;
-  padding: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  color: white;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
-  animation: slideDown 0.6s ease-out;
+/* ===== 欢迎区域 ===== */
+.welcome-section {
+  margin-bottom: 30px;
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
+.welcome-card {
+  background: linear-gradient(135deg, #667eea 0%, #66b1ff 100%);
+  border-radius: 12px;
+  padding: 30px;
+  color: white;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+}
+
+.welcome-content h1 {
+  font-size: 28px;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.welcome-content p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* ===== 统计数据 ===== */
+.stats-section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
 }
 
 .page-header h1 {
@@ -392,7 +450,7 @@ const addCommunication = async () => {
 .stat-number {
   font-size: 28px;
   font-weight: bold;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #66b1ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -401,7 +459,7 @@ const addCommunication = async () => {
 .card-header {
   font-size: 18px;
   font-weight: bold;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #66b1ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

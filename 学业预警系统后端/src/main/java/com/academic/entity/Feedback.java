@@ -1,6 +1,7 @@
 package com.academic.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -17,8 +18,10 @@ public class Feedback extends BaseEntity {
 
     private String content;  // 反馈内容
 
+    @TableField(exist = false)
     private String status;  // 状态：pending/reviewing/replied/closed
 
+    @TableField(exist = false)
     private String reply;  // 管理员回复
 
     private String replyContent;  // 回复内容

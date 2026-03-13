@@ -3,7 +3,7 @@
     <div class="register-container">
       <div class="register-box">
         <div class="register-header">
-          <h1>👔 辅导员注册</h1>
+          <h1>辅导员注册</h1>
           <p>学院管理权限 · 学生情况概览</p>
         </div>
 
@@ -39,12 +39,30 @@
               placeholder="请选择学院"
               style="width: 100%"
               clearable
+              @change="handleCollegeChange"
             >
               <el-option
                 v-for="college in colleges"
                 :key="college.id"
                 :label="college.name"
                 :value="college.id"
+              />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="所属专业" prop="majorCode">
+            <el-select 
+              v-model="form.majorCode" 
+              placeholder="请选择专业"
+              style="width: 100%"
+              clearable
+              :disabled="!form.collegeId"
+            >
+              <el-option
+                v-for="major in majors"
+                :key="major.code"
+                :label="major.name"
+                :value="major.code"
               />
             </el-select>
           </el-form-item>
@@ -78,7 +96,7 @@
             <el-input 
               v-model="form.password" 
               type="password" 
-              placeholder="请输入密码（至少8位）"
+              placeholder="请输入密码（至少6位）"
               show-password
               clearable
             >
@@ -86,6 +104,7 @@
                 <el-icon><Lock /></el-icon>
               </template>
             </el-input>
+            <span class="default-password-hint">默认密码: 123456</span>
           </el-form-item>
 
           <el-form-item label="确认密码" prop="confirmPassword">
@@ -103,20 +122,17 @@
           </el-form-item>
 
           <el-form-item>
-            <el-button 
-              type="primary" 
-              @click="handleRegister" 
-              :loading="loading"
-              style="width: 100%"
-            >
-              注册辅导员账号
-            </el-button>
-          </el-form-item>
-
-          <el-form-item>
-            <el-button @click="$router.push('/login')" style="width: 100%">
-              返回登录
-            </el-button>
+            <div class="register-actions">
+              <el-button 
+                type="primary" 
+                @click="handleRegister" 
+                :loading="loading"
+                class="register-btn"
+              >
+                注册账号
+              </el-button>
+              <router-link to="/login" class="login-link">已有账号？返回登录</router-link>
+            </div>
           </el-form-item>
         </el-form>
       </div>
@@ -135,15 +151,17 @@ const router = useRouter()
 const formRef = ref()
 const loading = ref(false)
 const colleges = ref([])
+const majors = ref([])
 
 const form = ref({
   username: '',
   name: '',
   collegeId: '',
+  majorCode: '',
   phone: '',
   email: '',
-  password: '',
-  confirmPassword: ''
+  password: '123456',
+  confirmPassword: '123456'
 })
 
 const validatePhone = (rule, value, callback) => {
@@ -169,8 +187,8 @@ const validateEmail = (rule, value, callback) => {
 const validatePassword = (rule, value, callback) => {
   if (!value) {
     callback(new Error('请输入密码'))
-  } else if (value.length < 8) {
-    callback(new Error('密码至少8位'))
+  } else if (value.length < 6) {
+    callback(new Error('密码至少6位'))
   } else {
     callback()
   }
@@ -193,10 +211,32 @@ const rules = {
   ],
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
   collegeId: [{ required: true, message: '请选择学院', trigger: 'change' }],
+  majorCode: [{ required: true, message: '请选择专业', trigger: 'change' }],
   phone: [{ validator: validatePhone, trigger: 'blur' }],
   email: [{ validator: validateEmail, trigger: 'blur' }],
   password: [{ validator: validatePassword, trigger: 'blur' }],
   confirmPassword: [{ validator: validateConfirmPassword, trigger: 'blur' }]
+}
+
+// 获取专业列表
+const getMajorsByCollege = async (collegeId) => {
+  try {
+    const response = await authAPI.getMajorsByCollege(collegeId)
+    majors.value = response || []
+  } catch (error) {
+    ElMessage.error('加载专业列表失败')
+    majors.value = []
+  }
+}
+
+// 学院变化处理
+const handleCollegeChange = (collegeId) => {
+  form.value.majorCode = '' // 清空专业选择
+  if (collegeId) {
+    getMajorsByCollege(collegeId)
+  } else {
+    majors.value = []
+  }
 }
 
 onMounted(async () => {
@@ -217,7 +257,7 @@ const handleRegister = async () => {
       await authAPI.registerCounselor({
         username: form.value.username,
         name: form.value.name,
-        collegeId: form.value.collegeId,
+        majorCode: form.value.majorCode, // 改为提交专业编码
         phone: form.value.phone,
         email: form.value.email,
         password: form.value.password,
@@ -287,5 +327,49 @@ const handleRegister = async () => {
   margin: 0;
   font-size: 13px;
   color: #999;
+}
+
+.login-link {
+  margin-left: 20px;
+  color: #409eff;
+  text-decoration: none;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+.register-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.register-btn {
+  background-color: #409eff;
+  border-color: #409eff;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  width: auto;
+}
+
+.register-btn:hover {
+  background-color: #66b1ff;
+  border-color: #66b1ff;
+}
+
+.login-link {
+  color: #409eff;
+  text-decoration: none;
+  font-size: 14px;
+  margin-left: 0;
+}
+
+.default-password-hint {
+  color: #909399;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div class="counselor-scores">
     <div class="page-header">
-      <h1>📊 学生成绩跟踪</h1>
+      <h1>学生成绩跟踪</h1>
       <p>按课程查看班级成绩分布、识别低分学生、跟踪成绩变化</p>
     </div>
 

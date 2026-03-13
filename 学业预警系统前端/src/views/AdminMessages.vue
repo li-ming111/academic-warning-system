@@ -1,14 +1,14 @@
 <template>
   <div class="admin-messages">
     <div class="page-header">
-      <h1>💬 消息与任务管理</h1>
+      <h1>消息与任务管理</h1>
       <p>系统广播消息、定向通知、任务分配与追踪</p>
     </div>
 
     <!-- Tab页签 -->
     <el-tabs type="card">
       <!-- 消息管理 -->
-      <el-tab-pane label="📨 消息管理">
+      <el-tab-pane label="消息管理">
         <div class="tab-content">
           <!-- 发送消息卡片 -->
           <el-card style="margin-bottom: 20px;">

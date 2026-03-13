@@ -1,35 +1,35 @@
 <template>
   <div class="counselor-dashboard">
     <div class="page-header">
-      <h1>👨‍🎓 学生情况概览</h1>
+      <h1>学生情况概览</h1>
       <p>班级预警统计和学生管理中心</p>
     </div>
 
     <!-- 统计卡片 -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon">👥</div>
+        <div class="stat-icon"></div>
         <div class="stat-content">
           <div class="stat-label">管理学生</div>
           <div class="stat-number">{{ counselorStats.studentCount || 0 }}</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">📚</div>
+        <div class="stat-icon"></div>
         <div class="stat-content">
           <div class="stat-label">预警总数</div>
           <div class="stat-number">{{ counselorStats.warningCount || 0 }}</div>
         </div>
       </div>
       <div class="stat-card warning">
-        <div class="stat-icon">🔴</div>
+        <div class="stat-icon"></div>
         <div class="stat-content">
           <div class="stat-label">红色预警</div>
           <div class="stat-number">{{ counselorStats.redWarnings || 0 }}</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">🟡</div>
+        <div class="stat-icon"></div>
         <div class="stat-content">
           <div class="stat-label">黄色预警</div>
           <div class="stat-number">{{ counselorStats.yellowWarnings || 0 }}</div>
@@ -40,33 +40,33 @@
     <!-- 预警趋势图 -->
     <el-card style="margin-bottom: 20px;">
       <template #header>
-        <div class="card-header">📈 预警趋势（近6个月）</div>
+        <div class="card-header">预警趋势（迖6个月）</div>
       </template>
       <div ref="trendChart" style="height: 300px;"></div>
     </el-card>
 
     <!-- 快速操作 -->
     <div class="quick-actions">
-      <h2 class="section-title">⚡ 快速操作</h2>
+      <h2 class="section-title">快速操作</h2>
       <div class="action-buttons">
         <router-link to="/counselor/students" class="action-btn">
-          <span>👥</span>
+          <span></span>
           <span>学生管理</span>
         </router-link>
         <router-link to="/counselor/warnings" class="action-btn">
-          <span>⚠️</span>
+          <span></span>
           <span>预警管理</span>
         </router-link>
         <router-link to="/counselor/courses" class="action-btn">
-          <span>📚</span>
+          <span></span>
           <span>选修课管理</span>
         </router-link>
         <router-link to="/counselor/credit-monitor" class="action-btn">
-          <span>📊</span>
+          <span></span>
           <span>学分监控</span>
         </router-link>
         <router-link to="/counselor/notifications" class="action-btn">
-          <span>📢</span>
+          <span></span>
           <span>批量通知</span>
         </router-link>
       </div>
@@ -75,14 +75,17 @@
     <!-- 待办事项 -->
     <el-card style="margin-top: 20px;">
       <template #header>
-        <div class="card-header">📋 待办事项 (3)</div>
+        <div class="card-header">待办事项 ({{ todos.length }})</div>
       </template>
-      <div class="todo-list">
-        <div class="todo-item" v-for="i in 3" :key="i">
+      <div class="todo-list" v-loading="loading">
+        <div v-if="todos.length === 0" class="empty-todos">
+          <el-empty description="暂无待办事项"></el-empty>
+        </div>
+        <div class="todo-item" v-for="todo in todos" :key="todo.id">
           <el-checkbox :checked="false"></el-checkbox>
           <div class="todo-content">
-            <h4>{{ i === 1 ? '处理红色预警学生' : i === 2 ? '学分不足预警通知' : '班级座谈会记录' }}</h4>
-            <p>{{ i === 1 ? '张三、李四预警，需要制定帮扶计划' : i === 2 ? '5个学生学分不足8学分' : '记录班级D本周座谈会' }}</p>
+            <h4>{{ todo.title }}</h4>
+            <p>{{ todo.description }}</p>
           </div>
           <el-button type="primary" size="small" link>处理</el-button>
         </div>
@@ -106,9 +109,11 @@ const counselorStats = ref({
   blueWarnings: 0
 })
 const todos = ref([])
+const loading = ref(false)
 
 onMounted(async () => {
   await loadDashboard()
+  await loadTodos()
 })
 
 const loadDashboard = async () => {
@@ -116,7 +121,7 @@ const loadDashboard = async () => {
     const userId = getUserId()
     if (!userId) return
     const response = await counselorAPI.getDashboard(userId)
-    if (response && response.code === 0) {
+    if (response.code === 200) {
       const data = response.data
       counselorStats.value = {
         studentCount: data.studentCount || 0,
@@ -155,6 +160,21 @@ const loadDashboard = async () => {
     }, 200)
   } catch (error) {
     console.error('加载看板失败:', error)
+  }
+}
+
+const loadTodos = async () => {
+  loading.value = true
+  try {
+    const userId = getUserId()
+    if (!userId) return
+    // 这里可以添加获取待办事项的API调用
+    // 暂时设置为空数组
+    todos.value = []
+  } catch (error) {
+    console.error('加载待办事项失败:', error)
+  } finally {
+    loading.value = false
   }
 }
 

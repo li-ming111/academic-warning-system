@@ -29,13 +29,16 @@ CREATE TABLE `classes` (
     `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(50) NOT NULL COMMENT '班级名称',
     `college_id` BIGINT NOT NULL COMMENT '学院ID',
+    `major_id` BIGINT NOT NULL COMMENT '专业ID',
     `teacher_id` BIGINT COMMENT '授课教师ID',
     `counselor_id` BIGINT COMMENT '辅导员ID',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`college_id`) REFERENCES `colleges` (`id`),
+    FOREIGN KEY (`major_id`) REFERENCES `majors` (`id`),
     INDEX `idx_teacher_id` (`teacher_id`),
-    INDEX `idx_counselor_id` (`counselor_id`)
+    INDEX `idx_counselor_id` (`counselor_id`),
+    INDEX `idx_major_id` (`major_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='班级表';
 
 -- 用户表
@@ -451,16 +454,17 @@ INSERT INTO `colleges` (`name`) VALUES
 INSERT INTO `subscription_preferences` (`student_id`) VALUES (1), (2);
 
 -- 插入初始专业数据
-INSERT INTO `majors` (`code`, `name`, `college_id`) VALUES
-('01', '计算机科学与技术', 3),
-('02', '软件工程', 3),
-('03', '网络工程', 1),
-('04', '人工智能', 2),
-('05', '机器学习', 2);
+INSERT INTO `majors` (`code`, `name`, `short_name`, `college_id`) VALUES
+('01', '计算机科学与技术', '计科', 3),
+('02', '计算机科学与技术', '计科', 3),
+('03', '网络工程', '网工', 1),
+('04', '人工智能', '智能', 2),
+('05', '机器学习', '机学', 2);
 
 -- 插入初始班级数据
-INSERT INTO `classes` (`name`, `college_id`, `teacher_id`, `counselor_id`) VALUES
-('2021级计算机1班', 3, NULL, NULL);
+INSERT INTO `classes` (`name`, `college_id`, `major_id`, `teacher_id`, `counselor_id`) VALUES
+('计科2305班', 3, 1, NULL, NULL),
+('计科2306班', 3, 1, NULL, NULL);
 
 -- 插入测试用户数据
 -- 注意：密码都是 BCrypt 加密的
@@ -479,8 +483,8 @@ INSERT INTO `users` (`username`, `password`, `email`, `phone`, `role`, `status`)
 
 -- 插入学生档案
 INSERT INTO `student_profile` (`user_id`, `student_id`, `name`, `college_id`, `major_id`, `class_id`) VALUES
-(1, '20210001', '张三', 3, 1, 1),
-(2, '2023020616', '李四', 3, 1, 1);
+(1, '20210001', '张三', 3, 1, 1), -- 分配到计科2305班
+(2, '2023020616', '司明', 3, 1, 2); -- 分配到计科2306班
 
 -- 插入教师档案
 INSERT INTO `teacher_profile` (`user_id`, `college_id`, `title`) VALUES
@@ -516,8 +520,8 @@ INSERT INTO `user_role_permissions` (`user_id`, `permission_code`, `permission_n
 
 -- 处标分析初始化数据、2023-2024秋学年
 INSERT INTO `benchmark_analysis` (`student_id`, `class_id`, `major_id`, `semester`, `student_gpa`, `class_avg_gpa`, `major_avg_gpa`, `class_rank`, `class_total`, `major_rank`, `major_total`, `courses_passed`, `courses_failed`, `required_credits`, `credits_on_track`) VALUES
-(1, 1, 1, '2023-2024秋', 3.52, 3.15, 3.18, 8, 30, 42, 120, 12, 0, 32.00, 1),
-(2, 1, 1, '2023-2024秋', 3.25, 3.15, 3.18, 12, 30, 65, 120, 12, 0, 30.00, 1);
+(1, 1, 1, '2023-2024秋', 3.52, 3.15, 3.18, 8, 30, 42, 120, 12, 0, 32.00, 1), -- 计科2305班
+(2, 2, 1, '2023-2024秋', 3.25, 3.15, 3.18, 12, 30, 65, 120, 12, 0, 30.00, 1); -- 计科2306班
 
 -- 成绩申诉初始化数据
 INSERT INTO `score_appeals` (`warning_id`, `student_id`, `reason`, `status`) VALUES

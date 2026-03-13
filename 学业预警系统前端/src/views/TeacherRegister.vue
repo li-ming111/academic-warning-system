@@ -3,7 +3,7 @@
     <div class="register-container">
       <div class="register-box">
         <div class="register-header">
-          <h1>👨‍🏫 教师注册</h1>
+          <h1>教师注册</h1>
           <p>选择所属学院 · 教学数据管理</p>
         </div>
 
@@ -11,8 +11,8 @@
           <el-form-item label="工号" prop="username">
             <el-input 
               v-model="form.username" 
-              placeholder="请输入工号（如202312）"
-              maxlength="10"
+              placeholder="请输入工号（5位）"
+              maxlength="5"
               clearable
             >
               <template #prefix>
@@ -74,11 +74,13 @@
             </el-input>
           </el-form-item>
 
+
+
           <el-form-item label="密码" prop="password">
             <el-input 
               v-model="form.password" 
               type="password" 
-              placeholder="请输入密码（至少8位）"
+              placeholder="请输入密码（至少6位）"
               show-password
               clearable
             >
@@ -86,6 +88,7 @@
                 <el-icon><Lock /></el-icon>
               </template>
             </el-input>
+            <span class="default-password-hint">默认密码: 123456</span>
           </el-form-item>
 
           <el-form-item label="确认密码" prop="confirmPassword">
@@ -103,20 +106,17 @@
           </el-form-item>
 
           <el-form-item>
-            <el-button 
-              type="primary" 
-              @click="handleRegister" 
-              :loading="loading"
-              style="width: 100%"
-            >
-              注册教师账号
-            </el-button>
-          </el-form-item>
-
-          <el-form-item>
-            <el-button @click="$router.push('/login')" style="width: 100%">
-              返回登录
-            </el-button>
+            <div class="register-actions">
+              <el-button 
+                type="primary" 
+                @click="handleRegister" 
+                :loading="loading"
+                class="register-btn"
+              >
+                注册账号
+              </el-button>
+              <router-link to="/login" class="login-link">已有账号？返回登录</router-link>
+            </div>
           </el-form-item>
         </el-form>
       </div>
@@ -135,6 +135,7 @@ const router = useRouter()
 const formRef = ref()
 const loading = ref(false)
 const colleges = ref([])
+const courses = ref([])
 
 const form = ref({
   username: '',
@@ -169,8 +170,8 @@ const validateEmail = (rule, value, callback) => {
 const validatePassword = (rule, value, callback) => {
   if (!value) {
     callback(new Error('请输入密码'))
-  } else if (value.length < 8) {
-    callback(new Error('密码至少8位'))
+  } else if (value.length < 6) {
+    callback(new Error('密码至少6位'))
   } else {
     callback()
   }
@@ -200,10 +201,10 @@ const rules = {
 
 onMounted(async () => {
   try {
-    const response = await authAPI.getColleges()
-    colleges.value = response || []
+    const collegesResponse = await authAPI.getColleges()
+    colleges.value = collegesResponse || []
   } catch (error) {
-    ElMessage.error('加载学院列表失败')
+    ElMessage.error('加载数据失败')
   }
 })
 
@@ -286,5 +287,49 @@ const handleRegister = async () => {
   margin: 0;
   font-size: 13px;
   color: #999;
+}
+
+.login-link {
+  margin-left: 20px;
+  color: #409eff;
+  text-decoration: none;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+.register-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.register-btn {
+  background-color: #409eff;
+  border-color: #409eff;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  width: auto;
+}
+
+.register-btn:hover {
+  background-color: #66b1ff;
+  border-color: #66b1ff;
+}
+
+.login-link {
+  color: #409eff;
+  text-decoration: none;
+  font-size: 14px;
+  margin-left: 0;
+}
+
+.default-password-hint {
+  color: #909399;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
 }
 </style>

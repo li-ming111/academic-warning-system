@@ -1,7 +1,7 @@
 <template>
   <div class="counselor-assistance">
     <div class="page-header">
-      <h1>🤝 帮扶计划管理</h1>
+      <h1>帮扶计划管理</h1>
       <p>为预警学生创建、编辑、跟踪帮扶计划</p>
     </div>
 

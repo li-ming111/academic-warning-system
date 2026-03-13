@@ -67,36 +67,49 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         response.setToken(generateToken(user));
         
         // 根据角色获取对应的 profile ID
-        int role = user.getRole();
-        if (role == 1) {  // 学生
-            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<StudentProfile> qw = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
-            qw.eq("user_id", user.getId());
-            StudentProfile student = studentProfileMapper.selectOne(qw);
-            if (student != null) {
-                response.setStudentId(student.getId());
-            }
-        } else if (role == 2) {  // 教师
-            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<TeacherProfile> qw = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
-            qw.eq("user_id", user.getId());
-            TeacherProfile teacher = teacherProfileMapper.selectOne(qw);
-            if (teacher != null) {
-                response.setTeacherId(teacher.getId());
-            }
-        } else if (role == 4) {  // 辅导员
-            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<CounselorProfile> qw = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
-            qw.eq("user_id", user.getId());
-            CounselorProfile counselor = counselorProfileMapper.selectOne(qw);
-            if (counselor != null) {
-                response.setCounselorId(counselor.getId());
-            }
-        } else if (role == 3) {  // 管理员
-            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<AdminProfile> qw = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
-            qw.eq("user_id", user.getId());
-            AdminProfile admin = adminProfileMapper.selectOne(qw);
-            if (admin != null) {
-                response.setAdminId(admin.getId());
-            }
+    int role = user.getRole();
+    if (role == 1) {  // 学生
+        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<StudentProfile> qw = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+        qw.eq("user_id", user.getId());
+        StudentProfile student = studentProfileMapper.selectOne(qw);
+        if (student != null) {
+            response.setStudentId(student.getId());
+            // 返回学生的真实姓名，前端将用此作为欢迎消息的用户名
+            response.setName(student.getName() != null ? student.getName() : student.getStudentId());
         }
+    } else if (role == 2) {  // 教师
+        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<TeacherProfile> qw = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+        qw.eq("user_id", user.getId());
+        TeacherProfile teacher = teacherProfileMapper.selectOne(qw);
+        if (teacher != null) {
+            response.setTeacherId(teacher.getId());
+        }
+        // 设置教师姓名
+        response.setName(user.getName() != null ? user.getName() : user.getUsername());
+    } else if (role == 4) {  // 辅导员
+        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<CounselorProfile> qw = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+        qw.eq("user_id", user.getId());
+        CounselorProfile counselor = counselorProfileMapper.selectOne(qw);
+        if (counselor != null) {
+            response.setCounselorId(counselor.getId());
+        }
+        // 设置辅导员姓名
+        response.setName(user.getName() != null ? user.getName() : user.getUsername());
+    } else if (role == 3) {  // 管理员
+        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<AdminProfile> qw = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+        qw.eq("user_id", user.getId());
+        AdminProfile admin = adminProfileMapper.selectOne(qw);
+        if (admin != null) {
+            response.setAdminId(admin.getId());
+        }
+        // 设置管理员姓名
+        response.setName(user.getName() != null ? user.getName() : user.getUsername());
+    }
+    
+    // 如果所有角色都没有设置name，使用用户名作为默认值
+    if (response.getName() == null) {
+        response.setName(user.getName() != null ? user.getName() : user.getUsername());
+    }
         
         return response;
     }

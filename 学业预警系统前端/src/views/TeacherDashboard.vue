@@ -4,46 +4,45 @@
     <div class="welcome-card">
       <div class="welcome-animation"></div>
       <div class="welcome-content">
-        <div class="greeting-icon">👨‍🏫</div>
+        <div class="greeting-icon"></div>
         <h1>欢迎回来，{{ teacherName }}！</h1>
         <p>{{ currentDate }} | 管理您的教学数据</p>
       </div>
     </div>
 
     <!-- 教学数据概览 -->
-    <div class="stats-section">
-      <h2 class="section-title">📊 教学数据概览</h2>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon">👥</div>
-          <div class="stat-content">
-            <div class="stat-label">管理学生</div>
-            <div class="stat-number">{{ teacherData.totalStudents || 0 }}</div>
-            <div class="stat-detail">人</div>
+    <div class="metrics-section">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon"></div>
+          <div class="metric-content">
+            <div class="metric-label">管理学生</div>
+            <div class="metric-value">{{ teacherData.totalStudents || 0 }}</div>
+            <div class="metric-trend">人</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon">📚</div>
-          <div class="stat-content">
-            <div class="stat-label">授课课程</div>
-            <div class="stat-number">{{ teacherData.totalCourses || 0 }}</div>
-            <div class="stat-detail">门</div>
+        <div class="metric-card">
+          <div class="metric-icon"></div>
+          <div class="metric-content">
+            <div class="metric-label">授课课程</div>
+            <div class="metric-value">{{ teacherData.totalCourses || 0 }}</div>
+            <div class="metric-trend">门</div>
           </div>
         </div>
-        <div class="stat-card warning">
-          <div class="stat-icon">🔴</div>
-          <div class="stat-content">
-            <div class="stat-label">红色预警</div>
-            <div class="stat-number">{{ teacherData.highWarnings || 0 }}</div>
-            <div class="stat-detail">需处理</div>
+        <div class="metric-card warning-metric">
+          <div class="metric-icon"></div>
+          <div class="metric-content">
+            <div class="metric-label">红色预警</div>
+            <div class="metric-value" :class="{ critical: teacherData.highWarnings > 0 }">{{ teacherData.highWarnings || 0 }}</div>
+            <div class="metric-trend">需处理</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon">🟡</div>
-          <div class="stat-content">
-            <div class="stat-label">黄色预警</div>
-            <div class="stat-number">{{ teacherData.mediumWarnings || 0 }}</div>
-            <div class="stat-detail">需关注</div>
+        <div class="metric-card">
+          <div class="metric-icon"></div>
+          <div class="metric-content">
+            <div class="metric-label">黄色预警</div>
+            <div class="metric-value">{{ teacherData.mediumWarnings || 0 }}</div>
+            <div class="metric-trend">需关注</div>
           </div>
         </div>
       </div>
@@ -54,7 +53,7 @@
       <!-- 待办事项 -->
       <div class="card-section">
         <div class="section-header">
-          <h2 class="section-title">📋 待办事项</h2>
+          <h2 class="section-title">待办事项</h2>
           <el-badge :value="3" class="badge"></el-badge>
         </div>
         <div class="todo-list">
@@ -73,7 +72,7 @@
       <!-- 红色预警学生 -->
       <div class="card-section">
         <div class="section-header">
-          <h2 class="section-title">🔴 红色预警</h2>
+          <h2 class="section-title">红色预警</h2>
           <router-link to="/teacher/warnings" class="view-all">查看全部 →</router-link>
         </div>
         <div class="warning-list">
@@ -94,30 +93,30 @@
 
     <!-- 快速操作 -->
     <div class="quick-actions">
-      <h2 class="section-title">⚡ 快速操作</h2>
+      <h2 class="section-title">快速操作</h2>
       <div class="action-buttons">
         <router-link to="/teacher/scores" class="action-btn">
-          <span>📝</span>
+          <span></span>
           <span>成绩录入</span>
         </router-link>
         <router-link to="/teacher/warnings" class="action-btn">
-          <span>⚠️</span>
+          <span></span>
           <span>预警管理</span>
         </router-link>
         <router-link to="/teacher/analysis" class="action-btn">
-          <span>📊</span>
+          <span></span>
           <span>性能分析</span>
         </router-link>
         <router-link to="/teacher/credit-prediction" class="action-btn">
-          <span>📚</span>
+          <span></span>
           <span>学分预测</span>
         </router-link>
         <router-link to="/teacher/audit-log" class="action-btn">
-          <span>📋</span>
+          <span></span>
           <span>审计日志</span>
         </router-link>
         <router-link to="/teacher/feedback-management" class="action-btn">
-          <span>💬</span>
+          <span></span>
           <span>反馈管理</span>
         </router-link>
       </div>
@@ -143,9 +142,18 @@ const teacherData = ref({
 })
 
 onMounted(async () => {
-  const storedName = localStorage.getItem('username')
-  if (storedName) {
+  const storedName = localStorage.getItem('userName')
+  const storedRole = localStorage.getItem('role')
+  // 检查storedName是否存在且不是纯数字（避免显示用户ID）
+  if (storedName && !/^\d+$/.test(storedName)) {
     teacherName.value = storedName
+  } else {
+    // 如果没有userName或userName是纯数字，根据角色显示默认名称
+    if (storedRole === '2' || storedRole === 'teacher') {
+      teacherName.value = '教师'
+    } else {
+      teacherName.value = '用户'
+    }
   }
 
   const today = new Date()
@@ -163,6 +171,13 @@ const loadTeacherDashboard = async () => {
     const response = await teacherAPI.getDashboard(userId)
     if (response) {
       teacherData.value = response
+      // 检查响应中是否包含教师姓名
+      if (response.teacherName || response.name) {
+        const teacherNameFromApi = response.teacherName || response.name
+        teacherName.value = teacherNameFromApi
+        // 更新localStorage中的userName
+        localStorage.setItem('userName', teacherNameFromApi)
+      }
     }
     // 加载待办事项
     const teacherId = localStorage.getItem('teacherId') || userId
@@ -211,22 +226,23 @@ const loadTeacherDashboard = async () => {
 
 /* 欢迎卡片 */
 .welcome-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: white;
   border-radius: 16px;
   padding: 45px;
   margin-bottom: 30px;
-  color: white;
-  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
+  color: #333;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
   animation: slideDown 0.6s ease-out;
+  border: 1px solid #e0e0e0;
 }
 
 .welcome-animation {
   position: absolute;
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(79, 172, 254, 0.1) 0%, transparent 70%);
   border-radius: 50%;
   top: -100px;
   right: -100px;
@@ -266,79 +282,61 @@ const loadTeacherDashboard = async () => {
 }
 
 /* 统计部分 */
-.stats-section {
+.metrics-section {
   margin-bottom: 30px;
 }
 
-.section-title {
-  margin: 0 0 20px 0;
-  font-size: 20px;
-  font-weight: bold;
-  color: #333;
-}
-
-.stats-grid {
+.metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
 }
 
-.stat-card {
+.metric-card {
   background: white;
-  border-radius: 16px;
-  padding: 28px;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
-  gap: 18px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid transparent;
+  gap: 15px;
+  transition: all 0.3s ease;
 }
 
-.stat-card:hover {
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-  transform: translateY(-8px);
-  border-color: #667eea;
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
 }
 
-.stat-card.warning {
-  border-left: 4px solid #e6a23c;
-}
-
-.stat-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.metric-icon {
   font-size: 32px;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  line-height: 1;
 }
 
-.stat-content {
+.metric-content {
   flex: 1;
 }
 
-.stat-label {
+.metric-label {
   font-size: 12px;
   color: #999;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
 
-.stat-number {
-  font-size: 32px;
-  font-weight: bold;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #4facfe;
+  margin-bottom: 4px;
 }
 
-.stat-detail {
+.metric-value.critical {
+  color: #ff6b6b;
+}
+
+.metric-trend {
   font-size: 12px;
-  color: #999;
+  color: #aaa;
 }
 
 /* 内容网格 */
@@ -482,10 +480,10 @@ const loadTeacherDashboard = async () => {
 }
 
 .action-btn:hover {
-  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 12px 32px rgba(79, 172, 254, 0.25);
   transform: translateY(-8px) scale(1.02);
-  border-color: #667eea;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border-color: #4facfe;
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.05) 0%, rgba(0, 242, 254, 0.05) 100%);
 }
 
 .action-btn span:first-child {

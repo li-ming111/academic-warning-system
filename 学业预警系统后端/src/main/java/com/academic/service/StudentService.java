@@ -26,4 +26,9 @@ public interface StudentService extends IService<StudentProfile> {
      */
     java.math.BigDecimal getStudentGPA(Long studentId);
 
+    /**
+     * 根据班级ID查询班级的所有学生
+     */
+    java.util.List<StudentProfile> getStudentsByClassId(Long classId);
+
 }

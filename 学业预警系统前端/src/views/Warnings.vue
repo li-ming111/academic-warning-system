@@ -140,7 +140,7 @@
 
         <el-divider></el-divider>
 
-        <p style="color: #f56c6c;"><strong>⚠️ 建议行动：</strong></p>
+        <p style="color: #f56c6c;"><strong>建议行动：</strong></p>
         <ul>
           <li>立即联系课程教师了解详细情况</li>
           <li>制定针对性的学习计划</li>

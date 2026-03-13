@@ -1,630 +1,572 @@
-<template>
-  <div class="teacher-class-management">
-    <div class="page-header">
-      <h1>📚 班级管理</h1>
-      <p>申请管理班级、查看班级学生、统计班级成绩、编辑班级信息</p>
-    </div>
-
-    <!-- Tab页签 -->
-    <el-tabs v-model="activeTab" style="margin-bottom: 20px;">
-      <el-tab-pane label="📋 班级申请管理" name="request">
-        <!-- 申请表单 -->
-        <el-card style="margin-bottom: 20px;">
-          <template #header>
-            <div class="card-header">✏️ 提交新申请</div>
-          </template>
-
-          <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-            <el-form-item label="选择班级" prop="classId">
-              <el-select 
-                v-model="form.classId" 
-                placeholder="请选择班级"
-                clearable
-                @change="onClassSelected"
-              >
-                <el-option 
-                  v-for="clazz in classList" 
-                  :key="clazz.id" 
-                  :label="`${clazz.name}`" 
-                  :value="clazz.id"
-                />
-              </el-select>
-            </el-form-item>
-
-            <el-form-item label="申请理由" prop="reason">
-              <el-input 
-                v-model="form.reason" 
-                type="textarea" 
-                rows="4" 
-                placeholder="请输入申请理由，说明为什么需要管理该班级"
-                maxlength="500"
-              ></el-input>
-            </el-form-item>
-
-            <el-form-item>
-              <el-button type="primary" @click="submitRequest" :loading="submitting">
-                提交申请
-              </el-button>
-              <el-button @click="resetForm">重置</el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
-
-        <!-- 申请历史 -->
-        <el-card>
-          <template #header>
-            <div class="card-header">📋 我的申请记录</div>
-          </template>
-
-          <el-table :data="requests" stripe style="width: 100%">
-            <el-table-column prop="id" label="申请ID" width="80"></el-table-column>
-            <el-table-column label="班级" width="150">
-              <template #default="{ row }">
-                {{ getClassNameById(row.classId) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="reason" label="申请理由" min-width="200"></el-table-column>
-            <el-table-column prop="status" label="状态" width="100">
-              <template #default="{ row }">
-                <el-tag 
-                  v-if="row.status === 'pending'" 
-                  type="warning"
-                >
-                  待审批
-                </el-tag>
-                <el-tag 
-                  v-else-if="row.status === 'approved'" 
-                  type="success"
-                >
-                  已批准
-                </el-tag>
-                <el-tag 
-                  v-else-if="row.status === 'rejected'" 
-                  type="danger"
-                >
-                  已拒绝
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="拒绝理由" width="200">
-              <template #default="{ row }">
-                <span v-if="row.rejectReason" style="color: #f56c6c;">
-                  {{ row.rejectReason }}
-                </span>
-                <span v-else style="color: #999;">-</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="申请时间" width="180">
-              <template #default="{ row }">
-                {{ formatDate(row.createdAt) }}
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <div v-if="requests.length === 0" style="text-align: center; padding: 40px; color: #999;">
-            暂无申请记录
+<template> 
+  <div class="class-management-container">
+    <!-- 标签页 -->
+    <el-tabs v-model="activeTab" class="tabs">
+      <!-- 我的班级 -->
+      <el-tab-pane label="我的班级" name="my-classes">
+        <div class="my-classes-section">
+          <el-empty v-if="myClasses.length === 0" description="暂无管理的班级"></el-empty>
+          
+          <div v-else class="classes-grid">
+            <div v-for="clazz in myClasses" :key="clazz.id" class="class-card">
+              <div class="class-header">
+                <h3>{{ clazz.name }}</h3>
+                <el-tag type="success">已管理</el-tag>
+              </div>
+              <div class="class-info">
+                <p><span class="label">学生数：</span> {{ clazz.studentCount }}</p>
+                <p><span class="label">班级ID：</span> {{ clazz.id }}</p>
+              </div>
+              <div class="class-actions">
+                <el-button type="primary" size="small" @click="goToScoreImport(clazz.id)">
+                  导入成绩
+                </el-button>
+                <el-button type="success" size="small" @click="openStudentImportDialog(clazz)">
+                  导入学生
+                </el-button>
+              </div>
+            </div>
           </div>
-        </el-card>
+        </div>
       </el-tab-pane>
 
-      <!-- 班级学生名单 -->
-      <el-tab-pane label="👥 班级学生名单" name="students">
-        <el-card>
-          <template #header>
-            <div class="card-header">👥 班级学生列表</div>
-          </template>
-
-          <div style="margin-bottom: 20px;">
-            <el-select 
-              v-model="selectedClassForStudents" 
-              placeholder="请选择班级"
+      <!-- 添加班级 -->
+      <el-tab-pane label="添加班级" name="add-class">
+        <div class="add-class-section">
+          <div class="search-box">
+            <el-input
+              v-model="searchKeyword"
+              placeholder="输入班级名称搜索"
               clearable
-              @change="loadClassStudents"
-              style="width: 300px;"
+              @input="searchClasses"
+              class="search-input"
             >
-              <el-option 
-                v-for="clazz in classList" 
-                :key="clazz.id" 
-                :label="`${clazz.name}`" 
-                :value="clazz.id"
-              />
-            </el-select>
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            <el-button type="primary" @click="loadClasses(false)" style="margin-left: 10px" :loading="loading">
+              查看无教师班级
+            </el-button>
+            <el-button type="primary" @click="loadClasses(true)" style="margin-left: 10px" :loading="loading">
+              查看所有班级
+            </el-button>
           </div>
 
-          <el-table :data="classStudents" stripe style="width: 100%;">
-            <el-table-column prop="studentId" label="学号" width="120"></el-table-column>
-            <el-table-column prop="name" label="姓名" width="100"></el-table-column>
-            <el-table-column prop="gender" label="性别" width="80">
-              <template #default="{ row }">
-                {{ row.gender === 'M' ? '男' : '女' }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="email" label="邮箱" width="200"></el-table-column>
-            <el-table-column prop="status" label="状态" width="100">
-              <template #default="{ row }">
-                <el-tag :type="row.status === 'active' ? 'success' : 'info'">
-                  {{ row.status === 'active' ? '在读' : '其他' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
+          <el-empty v-if="!searchPerformed" description="点击按钮查看班级"></el-empty>
+          <el-empty v-else-if="searchResults.length === 0" description="未找到匹配的班级"></el-empty>
 
-          <div v-if="classStudents.length === 0" style="text-align: center; padding: 40px; color: #999;">
-            请先选择班级查看学生名单
+          <div v-else class="search-results">
+            <div v-for="clazz in searchResults" :key="clazz.id" class="result-card">
+              <div class="result-header">
+                <h4>{{ clazz.name }}</h4>
+              </div>
+              <div class="result-info">
+                <p><span class="label">学生数：</span> {{ clazz.studentCount }}</p>
+                <p><span class="label">专业：</span> {{ clazz.majorId || '未指定' }}</p>
+                <p v-if="clazz.hasTeacher" class="warning">
+                  <el-icon><Warning /></el-icon>
+                  已有教师管理
+                </p>
+              </div>
+              <div class="result-actions">
+                <el-button
+                  type="primary"
+                  @click="openApplyDialog(clazz)"
+                >
+                  申请管理
+                </el-button>
+                <el-button v-if="clazz.hasTeacher" type="info" size="small" @click="viewClassDetails(clazz)" style="margin-left: 8px">
+                  查看详情
+                </el-button>
+              </div>
+            </div>
           </div>
-        </el-card>
+        </div>
       </el-tab-pane>
 
-      <!-- 班级成绩统计 -->
-      <el-tab-pane label="📊 班级成绩统计" name="scores">
-        <el-card>
-          <template #header>
-            <div class="card-header">📊 班级成绩统计</div>
-          </template>
+      <!-- 我的申请 -->
+      <el-tab-pane label="我的申请" name="my-requests">
+        <div class="requests-section">
+          <el-empty v-if="myRequests.length === 0" description="暂无申请记录"></el-empty>
 
-          <div style="margin-bottom: 20px;">
-            <el-select 
-              v-model="selectedClassForScores" 
-              placeholder="请选择班级"
-              clearable
-              @change="loadClassScoresStatistics"
-              style="width: 300px;"
-            >
-              <el-option 
-                v-for="clazz in classList" 
-                :key="clazz.id" 
-                :label="`${clazz.name}`" 
-                :value="clazz.id"
-              />
-            </el-select>
-          </div>
-
-          <div v-if="classScoresStats" class="stats-grid" style="margin-bottom: 20px;">
-            <div class="stat-card">
-              <div class="stat-label">平均分</div>
-              <div class="stat-number">{{ classScoresStats.avgScore.toFixed(2) }}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">最高分</div>
-              <div class="stat-number">{{ classScoresStats.maxScore }}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">最低分</div>
-              <div class="stat-number">{{ classScoresStats.minScore }}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">及格率</div>
-              <div class="stat-number">{{ classScoresStats.passRate }}%</div>
+          <div v-else class="requests-list">
+            <div v-for="req in myRequests" :key="req.id" class="request-item">
+              <div class="request-header">
+                <h4>{{ req.className }}</h4>
+                <el-tag :type="getStatusType(req.status)">{{ getStatusText(req.status) }}</el-tag>
+              </div>
+              <div class="request-info">
+                <p><span class="label">申请原因：</span> {{ req.reason || '无' }}</p>
+                <p><span class="label">申请时间：</span> {{ formatDate(req.createdAt) }}</p>
+              </div>
             </div>
           </div>
-
-          <el-table :data="classScoresList" stripe style="width: 100%;">
-            <el-table-column prop="studentName" label="学生名称" width="120"></el-table-column>
-            <el-table-column prop="studentId" label="学号" width="120"></el-table-column>
-            <el-table-column prop="courseName" label="课程" width="150"></el-table-column>
-            <el-table-column prop="score" label="成绩" width="80"></el-table-column>
-            <el-table-column prop="gradePoint" label="绩点" width="80"></el-table-column>
-            <el-table-column prop="semester" label="学期" width="100"></el-table-column>
-          </el-table>
-
-          <div v-if="classScoresList.length === 0" style="text-align: center; padding: 40px; color: #999;">
-            请先选择班级查看成绩统计
-          </div>
-        </el-card>
-      </el-tab-pane>
-
-      <!-- 班级信息编辑 -->
-      <el-tab-pane label="⚙️ 班级信息编辑" name="info">
-        <el-card>
-          <template #header>
-            <div class="card-header">⚙️ 编辑班级信息</div>
-          </template>
-
-          <div style="margin-bottom: 20px;">
-            <el-select 
-              v-model="selectedClassForEdit" 
-              placeholder="请选择班级"
-              clearable
-              @change="loadClassInfoForEdit"
-              style="width: 300px;"
-            >
-              <el-option 
-                v-for="clazz in classList" 
-                :key="clazz.id" 
-                :label="`${clazz.name}`" 
-                :value="clazz.id"
-              />
-            </el-select>
-          </div>
-
-          <el-form 
-            v-if="editForm.id" 
-            :model="editForm" 
-            :rules="editRules" 
-            ref="editFormRef" 
-            label-width="120px"
-          >
-            <el-form-item label="班级名称" prop="name">
-              <el-input v-model="editForm.name" placeholder="输入班级名称"></el-input>
-            </el-form-item>
-
-            <el-form-item label="班级代码" prop="code">
-              <el-input v-model="editForm.code" placeholder="输入班级代码"></el-input>
-            </el-form-item>
-
-            <el-form-item label="班级简介" prop="description">
-              <el-input 
-                v-model="editForm.description" 
-                type="textarea" 
-                rows="4"
-                placeholder="输入班级简介"
-              ></el-input>
-            </el-form-item>
-
-            <el-form-item>
-              <el-button type="primary" @click="saveClassInfo" :loading="savingClass">
-                保存修改
-              </el-button>
-              <el-button @click="resetEditForm">重置</el-button>
-            </el-form-item>
-          </el-form>
-
-          <div v-else style="text-align: center; padding: 40px; color: #999;">
-            请先选择班级
-          </div>
-        </el-card>
+        </div>
       </el-tab-pane>
     </el-tabs>
+
+    <!-- 申请管理班级对话框 -->
+    <el-dialog v-model="applyDialogVisible" title="申请管理班级" width="500px">
+      <el-form ref="applyFormRef" :model="applyForm" label-width="100px">
+        <el-form-item label="班级名称">
+          <el-input v-model="applyForm.className" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="申请原因" prop="reason">
+          <el-input
+            v-model="applyForm.reason"
+            type="textarea"
+            rows="4"
+            placeholder="请填写申请原因"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="applyDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitApply" :loading="applyLoading">
+          提交申请
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 导入学生对话框 -->
+    <el-dialog v-model="studentImportDialogVisible" title="导入学生信息" width="600px">
+      <div class="student-import-content">
+        <el-form ref="importFormRef" :model="importForm" label-width="100px">
+          <el-form-item label="班级名称">
+            <el-input v-model="importForm.className" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="上传Excel">
+            <el-upload
+              ref="uploadStudentRef"
+              :auto-upload="false"
+              :on-change="handleStudentFileSelect"
+              accept=".xlsx,.xls"
+              class="upload-demo"
+            >
+              <el-button type="primary">选择文件</el-button>
+              <template #tip>
+                <div class="el-upload__tip">
+                  请上传包含学生信息的Excel文件，格式要求：学号、姓名、性别、手机号、邮箱
+                </div>
+              </template>
+            </el-upload>
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <el-button @click="studentImportDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="importStudents" :loading="importLoading">
+          开始导入
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Search, Warning } from '@element-plus/icons-vue'
 import { teacherAPI } from '@/api/index'
-import { getUserId } from '@/utils/userUtils'
 
-// Tab相关
-const activeTab = ref('request')
-
-// 班级申请相关
-const formRef = ref()
-const submitting = ref(false)
-
-const form = ref({
-  classId: '',
+const activeTab = ref('my-classes')
+const myClasses = ref([])
+const searchKeyword = ref('')
+const searchResults = ref([])
+const searchPerformed = ref(false)
+const myRequests = ref([])
+const applyDialogVisible = ref(false)
+const applyLoading = ref(false)
+const loading = ref(false)
+const applyForm = ref({
+  classId: null,
+  className: '',
   reason: ''
 })
 
-const rules = {
-  classId: [{ required: true, message: '请选择班级', trigger: 'change' }],
-  reason: [{ required: true, message: '请输入申请理由', trigger: 'blur' }]
+// 学生导入相关
+const studentImportDialogVisible = ref(false)
+const importLoading = ref(false)
+const importForm = ref({
+  classId: null,
+  className: '',
+  file: null
+})
+const uploadStudentRef = ref(null)
+
+const teacherId = ref(null)
+
+// 获取教师ID（从localStorage或store）
+const getTeacherId = () => {
+  const userId = localStorage.getItem('userId')
+  return userId ? parseInt(userId) : null
 }
 
-// 班级信息编辑相关
-const editFormRef = ref()
-const savingClass = ref(false)
-const selectedClassForEdit = ref('')
-
-const editForm = ref({
-  id: '',
-  name: '',
-  code: '',
-  description: ''
-})
-
-const editRules = {
-  name: [{ required: true, message: '请输入班级名称', trigger: 'blur' }],
-  code: [{ required: true, message: '请输入班级代码', trigger: 'blur' }]
-}
-
-// 班级列表
-const classList = ref([])
-const requests = ref([])
-
-// 班级学生列表相关
-const selectedClassForStudents = ref('')
-const classStudents = ref([])
-
-// 班级成绩统计相关
-const selectedClassForScores = ref('')
-const classScoresStats = ref(null)
-const classScoresList = ref([])
-
-onMounted(async () => {
-  await loadClasses()
-  await loadMyRequests()
-})
-
-// 加载班级列表
-const loadClasses = async () => {
+// 加载我的班级
+const loadMyClasses = async () => {
   try {
-    classList.value = [
-      { id: 1, name: '2023级计算机科学与技术班一' },
-      { id: 2, name: '2023级计算机科学与技术班二' },
-      { id: 3, name: '2023级软件工程班一' },
-      { id: 4, name: '2024级计算机科学与技术班一' },
-      { id: 5, name: '2024级软件工程班一' }
-    ]
+    const userId = getTeacherId()
+    if (!userId) {
+      ElMessage.error('用户ID不存在')
+      return
+    }
+    
+    const response = await teacherAPI.getMyClasses(userId)
+    
+    if (response) {
+      myClasses.value = response
+    }
   } catch (error) {
-    console.error('加载班级列表失败:', error)
+    console.error('加载班级失败:', error)
+    ElMessage.error('加载班级失败')
+  }
+}
+
+// 搜索班级
+const searchClasses = async () => {
+  if (!searchKeyword.value || searchKeyword.value.trim() === '') {
+    searchResults.value = []
+    searchPerformed.value = false
+    return
+  }
+
+  try {
+    const response = await teacherAPI.searchClasses(searchKeyword.value)
+    
+    if (response) {
+      searchResults.value = response
+      searchPerformed.value = true
+    }
+  } catch (error) {
+    console.error('搜索班级失败:', error)
+    ElMessage.error('搜索班级失败')
+  }
+}
+
+// 加载班级
+const loadClasses = async (showAll = false) => {
+  loading.value = true
+  try {
+    // 传递空字符串获取所有班级
+    const response = await teacherAPI.searchClasses('')
+    
+    if (response) {
+      if (showAll) {
+        // 显示所有班级
+        searchResults.value = response
+      } else {
+        // 只显示没有教师的班级
+        searchResults.value = response.filter(clazz => !clazz.hasTeacher)
+      }
+      searchPerformed.value = true
+    }
+  } catch (error) {
+    console.error('加载班级失败:', error)
+    ElMessage.error('加载班级失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 打开申请对话框
+const openApplyDialog = (clazz) => {
+  applyForm.value = {
+    classId: clazz.id,
+    className: clazz.name,
+    reason: ''
+  }
+  applyDialogVisible.value = true
+}
+
+// 提交申请
+const submitApply = async () => {
+  if (!applyForm.value.reason || applyForm.value.reason.trim() === '') {
+    ElMessage.warning('请填写申请原因')
+    return
+  }
+
+  applyLoading.value = true
+  try {
+    const userId = getTeacherId()
+    const response = await teacherAPI.submitClassManagementRequest({
+      teacherId: userId,
+      classId: applyForm.value.classId,
+      reason: applyForm.value.reason
+    })
+    
+    if (response) {
+      ElMessage.success('申请已提交，等待管理员审核')
+      applyDialogVisible.value = false
+      loadMyRequests()
+      searchClasses()
+    }
+  } catch (error) {
+    console.error('提交申请失败:', error)
+    ElMessage.error(error.message || '提交申请失败')
+  } finally {
+    applyLoading.value = false
   }
 }
 
 // 加载我的申请
 const loadMyRequests = async () => {
   try {
-    const userId = localStorage.getItem('userId') || getUserId()
-    if (!userId) return
-    
+    const userId = getTeacherId()
     const response = await teacherAPI.getMyClassManagementRequests(userId)
-    if (response && Array.isArray(response)) {
-      requests.value = response
-    } else if (response && response.data && Array.isArray(response.data)) {
-      requests.value = response.data
+    
+    if (response) {
+      myRequests.value = response
     }
   } catch (error) {
-    console.error('加载申请记录失败:', error)
+    console.error('加载申请失败:', error)
   }
 }
 
-// 加载班级学生
-const loadClassStudents = async () => {
+// 跳转到成绩导入页面
+const goToScoreImport = (classId) => {
+  // 跳转到成绩管理页面，使用已实现的成绩导入功能
+  window.location.href = '/teacher/scores'
+}
+
+// 打开学生导入对话框
+const openStudentImportDialog = (clazz) => {
+  importForm.value = {
+    classId: clazz.id,
+    className: clazz.name,
+    file: null
+  }
+  studentImportDialogVisible.value = true
+}
+
+// 查看班级详情
+const viewClassDetails = (clazz) => {
+  ElMessage.info(`班级详情：${clazz.name}，学生数：${clazz.studentCount}`)
+  console.log('班级详情:', clazz)
+}
+
+// 处理学生文件选择
+const handleStudentFileSelect = (uploadFile) => {
+  importForm.value.file = uploadFile.raw
+}
+
+// 导入学生
+const importStudents = async () => {
+  if (!importForm.value.file) {
+    ElMessage.error('请选择Excel文件')
+    return
+  }
+
+  importLoading.value = true
   try {
-    if (!selectedClassForStudents.value) {
-      classStudents.value = []
-      return
-    }
+    const formData = new FormData()
+    formData.append('file', importForm.value.file)
+    formData.append('classId', importForm.value.classId)
     
-    // 模拟数据，实际应从API获取
-    const mockStudents = {
-      1: [
-        { studentId: '2023010001', name: '张三', gender: 'M', email: 'zhangsan@example.com', status: 'active' },
-        { studentId: '2023010002', name: '李四', gender: 'F', email: 'lisi@example.com', status: 'active' },
-        { studentId: '2023010003', name: '王五', gender: 'M', email: 'wangwu@example.com', status: 'active' }
-      ],
-      2: [
-        { studentId: '2023020001', name: '赵六', gender: 'F', email: 'zhaoliu@example.com', status: 'active' },
-        { studentId: '2023020002', name: '孙七', gender: 'M', email: 'sunqi@example.com', status: 'active' }
-      ],
-      3: [
-        { studentId: '2023030001', name: '周八', gender: 'M', email: 'zhouba@example.com', status: 'active' },
-        { studentId: '2023030002', name: '吴九', gender: 'F', email: 'wujiu@example.com', status: 'active' }
-      ]
-    }
+    const response = await teacherAPI.importStudents(formData)
     
-    classStudents.value = mockStudents[selectedClassForStudents.value] || []
+    if (response) {
+      ElMessage.success('学生导入成功')
+      studentImportDialogVisible.value = false
+      loadMyClasses()
+      uploadStudentRef.value.clearFiles()
+    }
   } catch (error) {
-    console.error('加载班级学生失败:', error)
-    ElMessage.error('加载班级学生失败')
+    console.error('导入学生失败:', error)
+    ElMessage.error(error.message || '导入学生失败')
+  } finally {
+    importLoading.value = false
   }
 }
 
-// 加载班级成绩统计
-const loadClassScoresStatistics = async () => {
-  try {
-    if (!selectedClassForScores.value) {
-      classScoresStats.value = null
-      classScoresList.value = []
-      return
-    }
-    
-    // 模拟成绩数据
-    const mockScores = {
-      1: {
-        stats: { avgScore: 78.5, maxScore: 95, minScore: 60, passRate: 92 },
-        list: [
-          { studentName: '张三', studentId: '2023010001', courseName: '高等数学', score: 85, gradePoint: 3.5, semester: '2023-2024-1' },
-          { studentName: '张三', studentId: '2023010001', courseName: '程序设计基础', score: 90, gradePoint: 4.0, semester: '2023-2024-1' },
-          { studentName: '李四', studentId: '2023010002', courseName: '高等数学', score: 78, gradePoint: 3.0, semester: '2023-2024-1' },
-          { studentName: '李四', studentId: '2023010002', courseName: '程序设计基础', score: 85, gradePoint: 3.5, semester: '2023-2024-1' }
-        ]
-      },
-      2: {
-        stats: { avgScore: 75.2, maxScore: 92, minScore: 65, passRate: 88 },
-        list: [
-          { studentName: '赵六', studentId: '2023020001', courseName: '高等数学', score: 80, gradePoint: 3.2, semester: '2023-2024-1' },
-          { studentName: '孙七', studentId: '2023020002', courseName: '程序设计基础', score: 88, gradePoint: 3.6, semester: '2023-2024-1' }
-        ]
-      }
-    }
-    
-    const data = mockScores[selectedClassForScores.value]
-    if (data) {
-      classScoresStats.value = data.stats
-      classScoresList.value = data.list
-    }
-  } catch (error) {
-    console.error('加载班级成绩统计失败:', error)
-    ElMessage.error('加载班级成绩统计失败')
+// 获取状态文本
+const getStatusText = (status) => {
+  const statusMap = {
+    'pending': '待审核',
+    'approved': '已批准',
+    'rejected': '已拒绝'
   }
+  return statusMap[status] || status
 }
 
-// 加载班级信息编辑
-const loadClassInfoForEdit = async () => {
-  try {
-    if (!selectedClassForEdit.value) {
-      editForm.value = { id: '', name: '', code: '', description: '' }
-      return
-    }
-    
-    const clazz = classList.value.find(c => c.id === selectedClassForEdit.value)
-    if (clazz) {
-      editForm.value = {
-        id: clazz.id,
-        name: clazz.name,
-        code: `CLASS${clazz.id}`,
-        description: '班级简介信息'
-      }
-    }
-  } catch (error) {
-    console.error('加载班级信息失败:', error)
-    ElMessage.error('加载班级信息失败')
+// 获取状态标签类型
+const getStatusType = (status) => {
+  const typeMap = {
+    'pending': 'warning',
+    'approved': 'success',
+    'rejected': 'danger'
   }
-}
-
-// 获取班级名称
-const getClassNameById = (classId) => {
-  const clazz = classList.value.find(c => c.id === classId)
-  return clazz ? clazz.name : `班级${classId}`
-}
-
-// 班级选择变化
-const onClassSelected = () => {
-  // 可以在这里添加额外逻辑
-}
-
-// 提交申请
-const submitRequest = async () => {
-  formRef.value.validate(async (valid) => {
-    if (!valid) return
-
-    submitting.value = true
-    try {
-      const userId = localStorage.getItem('userId') || getUserId()
-      const data = {
-        teacherId: userId,
-        classId: form.value.classId,
-        reason: form.value.reason
-      }
-
-      await teacherAPI.submitClassManagementRequest(data)
-      ElMessage.success('申请已提交，请等待管理员审批')
-      
-      // 重置表单并重新加载申请列表
-      resetForm()
-      await loadMyRequests()
-    } catch (error) {
-      console.error('提交申请失败:', error)
-      ElMessage.error(error.message || '提交申请失败')
-    } finally {
-      submitting.value = false
-    }
-  })
-}
-
-// 保存班级信息
-const saveClassInfo = async () => {
-  editFormRef.value.validate(async (valid) => {
-    if (!valid) return
-
-    savingClass.value = true
-    try {
-      // 实际应调用API保存
-      ElMessage.success('班级信息已保存')
-      resetEditForm()
-    } catch (error) {
-      console.error('保存班级信息失败:', error)
-      ElMessage.error(error.message || '保存班级信息失败')
-    } finally {
-      savingClass.value = false
-    }
-  })
-}
-
-// 重置表单
-const resetForm = () => {
-  formRef.value.resetFields()
-}
-
-// 重置编辑表单
-const resetEditForm = () => {
-  editFormRef.value?.resetFields()
+  return typeMap[status] || 'info'
 }
 
 // 格式化日期
 const formatDate = (date) => {
-  if (!date) return '-'
+  if (!date) return ''
   const d = new Date(date)
-  return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
+
+onMounted(() => {
+  teacherId.value = getTeacherId()
+  loadMyClasses()
+  loadMyRequests()
+})
 </script>
 
 <style scoped>
-.teacher-class-management {
-  padding: 24px;
-  background: #f5f7fa;
+.class-management-container {
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
   min-height: 100vh;
 }
 
-.page-header {
-  margin-bottom: 28px;
-  padding: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  color: white;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
-}
-
-.page-header h1 {
-  margin: 0 0 10px 0;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.page-header p {
-  margin: 0;
-  font-size: 14px;
-  opacity: 0.95;
-}
-
-.card-header {
-  font-size: 18px;
-  font-weight: bold;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.stat-card {
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
-  color: white;
-  text-align: center;
-}
-
-.stat-label {
-  font-size: 14px;
-  opacity: 0.9;
-  margin-bottom: 8px;
-}
-
-.stat-number {
-  font-size: 28px;
-  font-weight: bold;
-}
-
-:deep(.el-card) {
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px !important;
-}
-
-:deep(.el-table) {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-:deep(.el-button) {
-  border-radius: 6px;
-}
-
-:deep(.el-tabs__nav-wrap) {
+.tabs {
   background: white;
   border-radius: 12px;
-  padding: 0 16px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 我的班级 */
+.my-classes-section,
+.add-class-section,
+.requests-section {
+  padding: 20px 0;
+}
+
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.class-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 1px solid #e8ecf1;
+  border-radius: 10px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.class-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border-color: #667eea;
+}
+
+.class-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.class-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #2c3e50;
+}
+
+.class-info,
+.result-info {
+  margin: 12px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.label {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-right: 8px;
+}
+
+.class-actions,
+.result-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* 搜索框 */
+.search-box {
   margin-bottom: 20px;
 }
 
-:deep(.el-tabs__content) {
-  padding: 0;
+.search-input {
+  max-width: 400px;
+}
+
+.search-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.result-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 1px solid #e8ecf1;
+  border-radius: 10px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.result-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border-color: #667eea;
+}
+
+.result-header h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #2c3e50;
+}
+
+.warning {
+  color: #f56c6c;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* 申请列表 */
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.request-item {
+  background: white;
+  border: 1px solid #e8ecf1;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.request-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.request-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.request-header h4 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.request-info {
+  font-size: 14px;
+  color: #666;
+}
+
+.request-info p {
+  margin: 6px 0;
 }
 </style>

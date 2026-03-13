@@ -14,11 +14,13 @@ public class CounselorClassServiceImpl implements CounselorClassService {
 
     private final ClassMapper classMapper;
     private final EnrollmentMapper enrollmentMapper;
+    private final StudentProfileMapper studentProfileMapper;
     private final WarningMapper warningMapper;
 
-    public CounselorClassServiceImpl(ClassMapper classMapper, EnrollmentMapper enrollmentMapper, WarningMapper warningMapper) {
+    public CounselorClassServiceImpl(ClassMapper classMapper, EnrollmentMapper enrollmentMapper, StudentProfileMapper studentProfileMapper, WarningMapper warningMapper) {
         this.classMapper = classMapper;
         this.enrollmentMapper = enrollmentMapper;
+        this.studentProfileMapper = studentProfileMapper;
         this.warningMapper = warningMapper;
     }
 
@@ -30,10 +32,10 @@ public class CounselorClassServiceImpl implements CounselorClassService {
         
         List<Map<String, Object>> result = new ArrayList<>();
         for (com.academic.entity.Class cls : classes) {
-            // 统计班级学生数
-            QueryWrapper<Enrollment> enrollQw = new QueryWrapper<>();
-            enrollQw.eq("class_id", cls.getId());
-            int studentCount = enrollmentMapper.selectList(enrollQw).size();
+            // 统计班级学生数 - 使用StudentProfile而不是Enrollment
+            QueryWrapper<StudentProfile> studentQw = new QueryWrapper<>();
+            studentQw.eq("class_id", cls.getId());
+            long studentCount = studentProfileMapper.selectCount(studentQw);
             
             // 统计班级预警数
             QueryWrapper<AcademicWarning> warningQw = new QueryWrapper<>();
@@ -65,10 +67,10 @@ public class CounselorClassServiceImpl implements CounselorClassService {
             result.put("name", cls.getName());
             result.put("majorId", cls.getMajorId());
             
-            // 计算班级统计数据
-            QueryWrapper<Enrollment> enrollQw = new QueryWrapper<>();
-            enrollQw.eq("class_id", classId);
-            int totalStudents = enrollmentMapper.selectList(enrollQw).size();
+            // 计算班级统计数据 - 使用StudentProfile而不是Enrollment
+            QueryWrapper<StudentProfile> studentQw = new QueryWrapper<>();
+            studentQw.eq("class_id", classId);
+            long totalStudents = studentProfileMapper.selectCount(studentQw);
             result.put("totalStudents", totalStudents);
             
             // 及格率（假设及格成绩为60）
@@ -81,16 +83,16 @@ public class CounselorClassServiceImpl implements CounselorClassService {
 
     @Override
     public List<Map<String, Object>> getClassStudents(Long classId) {
-        // 获取班级的学生名单
-        QueryWrapper<Enrollment> qw = new QueryWrapper<>();
+        // 获取班级的学生名单 - 使用StudentProfile而不是Enrollment
+        QueryWrapper<StudentProfile> qw = new QueryWrapper<>();
         qw.eq("class_id", classId);
-        List<Enrollment> enrollments = enrollmentMapper.selectList(qw);
+        List<StudentProfile> students = studentProfileMapper.selectList(qw);
         
         List<Map<String, Object>> result = new ArrayList<>();
-        for (Enrollment enrollment : enrollments) {
+        for (StudentProfile student : students) {
             Map<String, Object> map = new HashMap<>();
-            map.put("studentId", enrollment.getStudentId());
-            map.put("studentName", "学生-" + enrollment.getStudentId());
+            map.put("studentId", student.getStudentId());
+            map.put("studentName", student.getName());
             map.put("classId", classId);
             result.add(map);
         }

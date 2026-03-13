@@ -206,10 +206,15 @@ export default {
 
     async loadPreferences() {
       try {
-        const studentId = localStorage.getItem('studentId') || this.userId
-        const response = await studentAPI.getSubscriptionPreferences(studentId)
-        if (response.data?.code === 200) {
-          Object.assign(this.preferences, response.data.data)
+        // 先根据 userId 获取 studentId
+        const userId = parseInt(localStorage.getItem('userId')) || this.userId
+        const studentInfoResponse = await studentAPI.getStudentInfoByUserId(userId)
+        if (studentInfoResponse.data?.code === 200 && studentInfoResponse.data.data) {
+          const studentId = studentInfoResponse.data.data.id
+          const response = await studentAPI.getSubscriptionPreferences(studentId)
+          if (response.data?.code === 200) {
+            Object.assign(this.preferences, response.data.data)
+          }
         }
       } catch (error) {
         console.warn('加载订阅偏好失败', error)
@@ -229,9 +234,15 @@ export default {
 
     async savePreferences() {
       try {
-        const response = await studentAPI.updateSubscriptionPreferences(this.userId, this.preferences)
-        if (response.data?.code === 200) {
-          this.$message.success('订阅设置已保存')
+        // 先根据 userId 获取 studentId
+        const userId = parseInt(localStorage.getItem('userId')) || this.userId
+        const studentInfoResponse = await studentAPI.getStudentInfoByUserId(userId)
+        if (studentInfoResponse.data?.code === 200 && studentInfoResponse.data.data) {
+          const studentId = studentInfoResponse.data.data.id
+          const response = await studentAPI.updateSubscriptionPreferences(studentId, this.preferences)
+          if (response.data?.code === 200) {
+            this.$message.success('订阅设置已保存')
+          }
         }
       } catch (error) {
         this.$message.error('保存设置失败')

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check LocalStorage</title>
+</head>
+<body>
+    <h1>LocalStorage Values</h1>
+    <pre id="output"></pre>
+    <script>
+        const output = document.getElementById('output');
+        const values = {
+            userName: localStorage.getItem('userName'),
+            username: localStorage.getItem('username'),
+            role: localStorage.getItem('role'),
+            token: localStorage.getItem('token')
+        };
+        output.textContent = JSON.stringify(values, null, 2);
+    </script>
+</body>
+</html>

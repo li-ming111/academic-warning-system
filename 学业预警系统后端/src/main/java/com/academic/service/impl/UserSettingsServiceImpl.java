@@ -3,9 +3,13 @@ package com.academic.service.impl;
 import com.academic.mapper.StudentProfileMapper;
 import com.academic.mapper.SecurityLogMapper;
 import com.academic.mapper.UserMapper;
+import com.academic.mapper.CollegeMapper;
+import com.academic.mapper.MajorMapper;
 import com.academic.entity.SecurityLog;
 import com.academic.entity.StudentProfile;
 import com.academic.entity.User;
+import com.academic.entity.College;
+import com.academic.entity.Major;
 import com.academic.service.UserSettingsService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -25,6 +29,8 @@ public class UserSettingsServiceImpl extends ServiceImpl<StudentProfileMapper, S
     private final StudentProfileMapper studentProfileMapper;
     private final SecurityLogMapper securityLogMapper;
     private final UserMapper userMapper;
+    private final CollegeMapper collegeMapper;
+    private final MajorMapper majorMapper;
 
     /**
      * 修改密码
@@ -116,7 +122,36 @@ public class UserSettingsServiceImpl extends ServiceImpl<StudentProfileMapper, S
     public StudentProfile getUserSettings(Long userId) {
         QueryWrapper<StudentProfile> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId);
-        return studentProfileMapper.selectOne(queryWrapper);
+        StudentProfile student = studentProfileMapper.selectOne(queryWrapper);
+        
+        if (student == null) {
+            return null;
+        }
+        
+        // 查询用户信息（訪users表获取email、phone）
+        User user = userMapper.selectById(userId);
+        if (user != null) {
+            student.setEmail(user.getEmail());
+            student.setPhone(user.getPhone());
+        }
+        
+        // 查询学院名称
+        if (student.getCollegeId() != null) {
+            College college = collegeMapper.selectById(student.getCollegeId());
+            if (college != null) {
+                student.setCollegeName(college.getName());
+            }
+        }
+        
+        // 查询专业名称
+        if (student.getMajorId() != null) {
+            Major major = majorMapper.selectById(student.getMajorId());
+            if (major != null) {
+                student.setMajorName(major.getName());
+            }
+        }
+        
+        return student;
     }
 
 }

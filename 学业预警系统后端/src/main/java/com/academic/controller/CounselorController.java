@@ -26,11 +26,13 @@ public class CounselorController {
     private final CounselorNotificationService counselorNotificationService;
     private final CounselorClassService counselorClassService;
     private final CounselorAnalyticsService counselorAnalyticsService;
+    private final ClassManagementRequestService classManagementRequestService;
 
     public CounselorController(CounselorService counselorService, WarningService warningService,
                                StudentProfileMapper studentProfileMapper, AssistancePlanService assistancePlanService,
                                CounselorScoreService counselorScoreService, CounselorNotificationService counselorNotificationService,
-                               CounselorClassService counselorClassService, CounselorAnalyticsService counselorAnalyticsService) {
+                               CounselorClassService counselorClassService, CounselorAnalyticsService counselorAnalyticsService,
+                               ClassManagementRequestService classManagementRequestService) {
         this.counselorService = counselorService;
         this.warningService = warningService;
         this.studentProfileMapper = studentProfileMapper;
@@ -39,6 +41,7 @@ public class CounselorController {
         this.counselorNotificationService = counselorNotificationService;
         this.counselorClassService = counselorClassService;
         this.counselorAnalyticsService = counselorAnalyticsService;
+        this.classManagementRequestService = classManagementRequestService;
     }
 
     /**
@@ -54,7 +57,8 @@ public class CounselorController {
 
             User user = new User();
             user.setUsername(username);
-            user.setPassword(password);
+            // 如果密码为空，设置默认密码123456
+            user.setPassword(password != null && !password.isEmpty() ? password : "123456");
             user.setRole(4); // 辅导员角色
 
             CounselorProfile profile = new CounselorProfile();
@@ -430,6 +434,74 @@ public class CounselorController {
             return ApiResponse.success(comparison);
         } catch (Exception e) {
             log.error("班级预警对比失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取辅导员的所有班级
+     */
+    @GetMapping("/class-management/my-classes")
+    public ApiResponse<List<Map<String, Object>>> getMyClasses(@RequestParam Long counselorId) {
+        try {
+            List<Map<String, Object>> classes = classManagementRequestService.getCounselorClasses(counselorId);
+            return ApiResponse.success(classes);
+        } catch (Exception e) {
+            log.error("获取我的班级失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取辅导员的班级管理申请列表
+     */
+    @GetMapping("/class-management/requests")
+    public ApiResponse<List<ClassManagementRequest>> getMyClassRequests(@RequestParam Long counselorId) {
+        try {
+            List<ClassManagementRequest> requests = classManagementRequestService.getCounselorRequests(counselorId);
+            return ApiResponse.success(requests);
+        } catch (Exception e) {
+            log.error("获取班级管理申请失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 辅导员申请管理班级
+     */
+    @PostMapping("/class-management/request")
+    public ApiResponse<Long> requestClassManagement(@RequestBody Map<String, Object> params) {
+        try {
+            Long counselorId = ((Number) params.get("counselorId")).longValue();
+            Long classId = ((Number) params.get("classId")).longValue();
+            String reason = (String) params.get("reason");
+
+            Long requestId = classManagementRequestService.submitRequest(counselorId, classId, "counselor", reason);
+            return ApiResponse.success(requestId);
+        } catch (Exception e) {
+            log.error("申请班级管理失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 辅导员申请管理班级
+     */
+    @PostMapping("/class-management/apply")
+    public ApiResponse<Map<String, Object>> applyClassManagement(@RequestBody Map<String, Object> params) {
+        try {
+            Long counselorId = ((Number) params.get("counselorId")).longValue();
+            Long classId = ((Number) params.get("classId")).longValue();
+            String reason = (String) params.get("reason");
+            
+            Long requestId = classManagementRequestService.submitRequest(counselorId, classId, "counselor", reason);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("requestId", requestId);
+            result.put("message", "申请已提交，等待管理员审核");
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("申请班级管理失败", e);
             return ApiResponse.error(e.getMessage());
         }
     }

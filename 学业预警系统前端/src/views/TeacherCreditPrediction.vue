@@ -1,7 +1,7 @@
 <template>
   <div class="teacher-credit-prediction">
     <div class="page-header">
-      <h1>📚 学分达标预测</h1>
+      <h1>学分达标预测</h1>
       <p>学生学分预测、达标率分析和课程推荐</p>
     </div>
 
@@ -15,7 +15,7 @@
     <!-- 课程推荐 - 低分学生 -->
     <el-card style="margin-bottom: 20px;">
       <template #header>
-        <div class="card-header">📋 课程推荐（低分学生辅导）</div>
+        <div class="card-header">课程推荐（低分学生辅导）</div>
       </template>
 
       <div class="recommendations-grid" v-if="recommendations.length > 0">
@@ -48,7 +48,7 @@
     <!-- 学分预测详情表格 -->
     <el-card style="margin-bottom: 20px;">
       <template #header>
-        <div class="card-header">📊 学生学分预测详情</div>
+        <div class="card-header">学生学分预测详情</div>
       </template>
 
       <el-table :data="studentPredictions" stripe v-if="studentPredictions.length > 0">
@@ -92,7 +92,7 @@
     <!-- 学分达标率统计 -->
     <el-card>
       <template #header>
-        <div class="card-header">📈 班级学分达标率统计</div>
+        <div class="card-header">班级学分达标率统计</div>
       </template>
 
       <div class="stats-grid">
@@ -137,7 +137,7 @@
           </el-tag>
         </p>
         <p v-if="selectedPrediction.riskLevel !== 'low'" style="color: #f56c6c; margin-top: 10px;">
-          <strong>⚠️ 建议：</strong>
+          <strong>建议：</strong>
           <span v-if="selectedPrediction.riskLevel === 'high'">学生学分达标风险很高，建议立即进行个性化辅导和课程规划。</span>
           <span v-else>学生学分达标有风险，建议加强学习指导和监督。</span>
         </p>

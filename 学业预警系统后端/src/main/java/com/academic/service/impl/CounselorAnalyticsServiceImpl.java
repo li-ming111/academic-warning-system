@@ -14,15 +14,17 @@ import java.util.*;
 public class CounselorAnalyticsServiceImpl implements CounselorAnalyticsService {
 
     private final EnrollmentMapper enrollmentMapper;
+    private final StudentProfileMapper studentProfileMapper;
     private final ScoreMapper scoreMapper;
     private final WarningMapper warningMapper;
     private final AssistancePlanMapper assistancePlanMapper;
     private final ClassMapper classMapper;
 
-    public CounselorAnalyticsServiceImpl(EnrollmentMapper enrollmentMapper, ScoreMapper scoreMapper, 
+    public CounselorAnalyticsServiceImpl(EnrollmentMapper enrollmentMapper, StudentProfileMapper studentProfileMapper, ScoreMapper scoreMapper, 
                                         WarningMapper warningMapper, AssistancePlanMapper assistancePlanMapper,
                                         ClassMapper classMapper) {
         this.enrollmentMapper = enrollmentMapper;
+        this.studentProfileMapper = studentProfileMapper;
         this.scoreMapper = scoreMapper;
         this.warningMapper = warningMapper;
         this.assistancePlanMapper = assistancePlanMapper;
@@ -38,14 +40,15 @@ public class CounselorAnalyticsServiceImpl implements CounselorAnalyticsService 
         double totalInsufficientRate = 0;
         
         for (com.academic.entity.Class cls : classes) {
-            QueryWrapper<Enrollment> enrollQw = new QueryWrapper<>();
-            enrollQw.eq("class_id", cls.getId());
-            List<Enrollment> enrollments = enrollmentMapper.selectList(enrollQw);
+            // 使用StudentProfile查询班级学生而不是Enrollment
+            QueryWrapper<StudentProfile> studentQw = new QueryWrapper<>();
+            studentQw.eq("class_id", cls.getId());
+            List<StudentProfile> students = studentProfileMapper.selectList(studentQw);
             
             int insufficientCount = 0;
-            for (Enrollment enrollment : enrollments) {
+            for (StudentProfile student : students) {
                 QueryWrapper<Score> scoreQw = new QueryWrapper<>();
-                scoreQw.eq("student_id", enrollment.getStudentId());
+                scoreQw.eq("student_id", student.getId());
                 List<Score> scores = scoreMapper.selectList(scoreQw);
                 
                 double totalCredits = scores.stream()
@@ -57,7 +60,7 @@ public class CounselorAnalyticsServiceImpl implements CounselorAnalyticsService 
                 }
             }
             
-            double rate = enrollments.isEmpty() ? 0 : (insufficientCount * 100.0 / enrollments.size());
+            double rate = students.isEmpty() ? 0 : (insufficientCount * 100.0 / students.size());
             totalInsufficientRate += rate;
         }
         
@@ -116,14 +119,15 @@ public class CounselorAnalyticsServiceImpl implements CounselorAnalyticsService 
         
         List<Map<String, Object>> result = new ArrayList<>();
         for (com.academic.entity.Class cls : classes) {
-            QueryWrapper<Enrollment> enrollQw = new QueryWrapper<>();
-            enrollQw.eq("class_id", cls.getId());
-            List<Enrollment> enrollments = enrollmentMapper.selectList(enrollQw);
+            // 使用StudentProfile查询班级学生而不是Enrollment
+            QueryWrapper<StudentProfile> studentQw = new QueryWrapper<>();
+            studentQw.eq("class_id", cls.getId());
+            List<StudentProfile> students = studentProfileMapper.selectList(studentQw);
             
             int creditAchievementCount = 0;
-            for (Enrollment enrollment : enrollments) {
+            for (StudentProfile student : students) {
                 QueryWrapper<Score> scoreQw = new QueryWrapper<>();
-                scoreQw.eq("student_id", enrollment.getStudentId());
+                scoreQw.eq("student_id", student.getId());
                 List<Score> scores = scoreMapper.selectList(scoreQw);
                 
                 double totalCredits = scores.stream()
@@ -135,13 +139,13 @@ public class CounselorAnalyticsServiceImpl implements CounselorAnalyticsService 
                 }
             }
             
-            double rate = enrollments.isEmpty() ? 0 : (creditAchievementCount * 100.0 / enrollments.size());
+            double rate = students.isEmpty() ? 0 : (creditAchievementCount * 100.0 / students.size());
             
             Map<String, Object> map = new HashMap<>();
             map.put("className", cls.getName());
             map.put("achievementRate", String.format("%.1f", rate));
             map.put("achievement", creditAchievementCount);
-            map.put("total", enrollments.size());
+            map.put("total", students.size());
             result.add(map);
         }
         

@@ -154,8 +154,10 @@ CREATE TABLE IF NOT EXISTS `feedbacks` (
     `student_id` BIGINT NOT NULL,
     `content` TEXT NOT NULL,
     `category` VARCHAR(50),
-    `rating` INT,
+    `status` VARCHAR(50) DEFAULT 'pending',
+    `reply` TEXT,
     `reply_content` TEXT,
+    `rating` INT,
     `replied_at` TIMESTAMP,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -213,4 +215,35 @@ CREATE TABLE IF NOT EXISTS `benchmark_analysis` (
     FOREIGN KEY (`class_id`) REFERENCES `classes`(`id`),
     FOREIGN KEY (`major_id`) REFERENCES `majors`(`id`),
     KEY `idx_student_id` (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create class_management_request table
+CREATE TABLE IF NOT EXISTS `class_management_request` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `teacher_id` BIGINT,
+    `counselor_id` BIGINT,
+    `class_id` BIGINT NOT NULL,
+    `user_type` VARCHAR(20) NOT NULL, -- 'teacher' or 'counselor'
+    `status` VARCHAR(50) DEFAULT 'pending', -- pending, approved, rejected
+    `reason` TEXT,
+    `reject_reason` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`class_id`) REFERENCES `classes`(`id`),
+    KEY `idx_class_id` (`class_id`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create teacher_course table for teacher-course relationship
+CREATE TABLE IF NOT EXISTS `teacher_course` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `teacher_id` BIGINT NOT NULL,
+    `course_id` BIGINT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`teacher_id`) REFERENCES `teacher_profile`(`id`),
+    FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`),
+    UNIQUE KEY `uk_teacher_course` (`teacher_id`, `course_id`),
+    KEY `idx_teacher_id` (`teacher_id`),
+    KEY `idx_course_id` (`course_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

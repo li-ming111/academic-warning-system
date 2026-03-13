@@ -2,15 +2,24 @@ package com.academic.controller;
 
 import com.academic.common.ApiResponse;
 import com.academic.dto.TeacherDashboardResponse;
+import com.academic.dto.ScoreImportRequest;
 import com.academic.entity.*;
 import com.academic.service.TeacherService;
 import com.academic.service.WarningService;
 import com.academic.service.ClassManagementRequestService;
+import com.academic.service.ExcelScoreImportService;
 import com.academic.mapper.StudentProfileMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import java.io.InputStream;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,14 +32,17 @@ public class TeacherController {
     private final WarningService warningService;
     private final StudentProfileMapper studentProfileMapper;
     private final ClassManagementRequestService classManagementRequestService;
+    private final ExcelScoreImportService excelScoreImportService;
 
     public TeacherController(TeacherService teacherService, WarningService warningService,
                              StudentProfileMapper studentProfileMapper,
-                             ClassManagementRequestService classManagementRequestService) {
+                             ClassManagementRequestService classManagementRequestService,
+                             ExcelScoreImportService excelScoreImportService) {
         this.teacherService = teacherService;
         this.warningService = warningService;
         this.studentProfileMapper = studentProfileMapper;
         this.classManagementRequestService = classManagementRequestService;
+        this.excelScoreImportService = excelScoreImportService;
     }
 
     /**
@@ -45,7 +57,8 @@ public class TeacherController {
 
             User user = new User();
             user.setUsername(username);
-            user.setPassword(password);
+            // 如果密码为空，设置默认密码123456
+            user.setPassword(password != null && !password.isEmpty() ? password : "123456");
             user.setRole(2);
 
             TeacherProfile profile = new TeacherProfile();
@@ -656,7 +669,7 @@ public class TeacherController {
             Long classId = ((Number) params.get("classId")).longValue();
             String reason = (String) params.get("reason");
 
-            Long requestId = classManagementRequestService.submitRequest(teacherId, classId, reason);
+            Long requestId = classManagementRequestService.submitRequest(teacherId, classId, "teacher", reason);
             return ApiResponse.success(requestId);
         } catch (Exception e) {
             log.error("申请班级管理失败", e);
@@ -675,6 +688,360 @@ public class TeacherController {
         } catch (Exception e) {
             log.error("获取班级管理申请失败", e);
             return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 搜索班级
+     */
+    @GetMapping("/class-management/search")
+    public ApiResponse<List<Map<String, Object>>> searchClasses(@RequestParam(required = false) String keyword) {
+        try {
+            List<Map<String, Object>> classes = classManagementRequestService.searchClasses(keyword);
+            return ApiResponse.success(classes);
+        } catch (Exception e) {
+            log.error("搜索班级失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 教师申请管理班级
+     */
+    @PostMapping("/class-management/apply")
+    public ApiResponse<Map<String, Object>> applyClassManagement(@RequestBody Map<String, Object> params) {
+        try {
+            Long teacherId = ((Number) params.get("teacherId")).longValue();
+            Long classId = ((Number) params.get("classId")).longValue();
+            String reason = (String) params.get("reason");
+            
+            Long requestId = classManagementRequestService.submitRequest(teacherId, classId, "teacher", reason);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("requestId", requestId);
+            result.put("message", "申请已提交，等待管理员审核");
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("申请班级管理失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取教师的所有班级
+     */
+    @GetMapping("/class-management/my-classes")
+    public ApiResponse<List<Map<String, Object>>> getMyClasses(@RequestParam Long teacherId) {
+        try {
+            List<Map<String, Object>> classes = classManagementRequestService.getTeacherClasses(teacherId);
+            return ApiResponse.success(classes);
+        } catch (Exception e) {
+            log.error("获取我的班级失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 解析 Excel 成绩文件
+     */
+    @PostMapping("/scores/parse-excel")
+    public ApiResponse<List<ScoreImportRequest.ScoreImportItem>> parseExcelFile(
+            @RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return ApiResponse.error("请上传 Excel 文件");
+            }
+            
+            // 检查文件类型
+            String filename = file.getOriginalFilename();
+            if (!filename.endsWith(".xlsx") && !filename.endsWith(".xls")) {
+                return ApiResponse.error("仅支持 Excel 文件");
+            }
+            
+            List<ScoreImportRequest.ScoreImportItem> items = excelScoreImportService.parseExcelFile(file);
+            return ApiResponse.success(items);
+        } catch (Exception e) {
+            log.error("解析 Excel 文件失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 导入成绩（根据Excel中的课程名称自动识别）
+     */
+    @PostMapping("/scores/import")
+    public ApiResponse<Map<String, Object>> importScores(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("semester") String semester,
+            @RequestParam(required = false) Long courseId) {
+        try {
+            if (file.isEmpty()) {
+                return ApiResponse.error("文件不能为空");
+            }
+            
+            if (semester == null || semester.isEmpty()) {
+                return ApiResponse.error("学期不能为空");
+            }
+            
+            // 解析Excel文件
+            List<ScoreImportRequest.ScoreImportItem> items = excelScoreImportService.parseExcelFile(file);
+            
+            if (items == null || items.isEmpty()) {
+                return ApiResponse.error("成绩数据为空");
+            }
+            
+            Map<String, Object> result;
+            if (courseId != null) {
+                // 如果提供了courseId，使用按课程ID导入的方法
+                result = excelScoreImportService.importScoresByCourseId(courseId, items, semester);
+            } else {
+                // 否则使用根据课程名称自动识别的方法
+                ScoreImportRequest importRequest = new ScoreImportRequest();
+                importRequest.setSemester(semester);
+                importRequest.setItems(items);
+                result = excelScoreImportService.importScores(importRequest);
+            }
+            
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("导入成绩失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 导入成绩（按课程ID）
+     */
+    @PostMapping("/scores/import-by-course")
+    public ApiResponse<Map<String, Object>> importScoresByCourse(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("courseId") Long courseId,
+            @RequestParam("semester") String semester) {
+        try {
+            if (file.isEmpty()) {
+                return ApiResponse.error("文件不能为空");
+            }
+            
+            if (courseId == null) {
+                return ApiResponse.error("课程ID不能为空");
+            }
+            
+            if (semester == null || semester.isEmpty()) {
+                return ApiResponse.error("学期不能为空");
+            }
+            
+            // 解析Excel文件
+            List<ScoreImportRequest.ScoreImportItem> items = excelScoreImportService.parseExcelFile(file);
+            
+            if (items == null || items.isEmpty()) {
+                return ApiResponse.error("成绩数据为空");
+            }
+            
+            // 直接调用方法保存成绩（按courseId）
+            Map<String, Object> result = excelScoreImportService.importScoresByCourseId(courseId, items, semester);
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("导入成绩失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 导入学生信息
+     */
+    @PostMapping("/students/import")
+    public ApiResponse<Map<String, Object>> importStudents(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("classId") Long classId) {
+        try {
+            if (file.isEmpty()) {
+                return ApiResponse.error("文件不能为空");
+            }
+            
+            if (classId == null) {
+                return ApiResponse.error("班级ID不能为空");
+            }
+            
+            // 解析Excel文件
+            List<Map<String, Object>> studentData = parseStudentExcelFile(file);
+            
+            if (studentData == null || studentData.isEmpty()) {
+                return ApiResponse.error("学生数据为空");
+            }
+            
+            // 导入学生信息
+            Map<String, Object> result = teacherService.importStudents(classId, studentData);
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("导入学生失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 课程成绩分析
+     */
+    @GetMapping("/scores/analyze")
+    public ApiResponse<Map<String, Object>> analyzeScores(@RequestParam("course_id") Long courseId) {
+        try {
+            Map<String, Object> analysis = teacherService.analyzeCourseScores(courseId);
+            return ApiResponse.success(analysis);
+        } catch (Exception e) {
+            log.error("课程成绩分析失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 成绩异常检测
+     */
+    @GetMapping("/scores/anomalies")
+    public ApiResponse<List<Map<String, Object>>> detectAnomalies(@RequestParam("course_id") Long courseId) {
+        try {
+            List<Map<String, Object>> anomalies = teacherService.detectScoreAnomalies(courseId);
+            return ApiResponse.success(anomalies);
+        } catch (Exception e) {
+            log.error("成绩异常检测失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 触发预警
+     */
+    @PostMapping("/scores/warnings")
+    public ApiResponse<Integer> triggerWarnings(@RequestParam("course_id") Long courseId) {
+        try {
+            int warningCount = teacherService.triggerScoreWarnings(courseId);
+            return ApiResponse.success(warningCount);
+        } catch (Exception e) {
+            log.error("触发预警失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 学生成绩分析
+     */
+    @GetMapping("/scores/student/analyze")
+    public ApiResponse<Map<String, Object>> analyzeStudentScore(
+            @RequestParam("student_id") Long studentId,
+            @RequestParam("course_id") Long courseId) {
+        try {
+            Map<String, Object> analysis = teacherService.analyzeStudentScore(studentId, courseId);
+            return ApiResponse.success(analysis);
+        } catch (Exception e) {
+            log.error("学生成绩分析失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 删除成绩
+     */
+    @DeleteMapping("/scores/{scoreId}")
+    public ApiResponse<String> deleteScore(@PathVariable Long scoreId) {
+        try {
+            teacherService.deleteScore(scoreId);
+            return ApiResponse.success("成绩删除成功");
+        } catch (Exception e) {
+            log.error("删除成绩失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 批量删除成绩
+     */
+    @PostMapping("/scores/batch-delete")
+    public ApiResponse<String> batchDeleteScores(@RequestBody List<Long> scoreIds) {
+        try {
+            teacherService.batchDeleteScores(scoreIds);
+            return ApiResponse.success("批量删除成绩成功");
+        } catch (Exception e) {
+            log.error("批量删除成绩失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取班级成绩分析
+     */
+    @GetMapping("/classes/{classId}/analysis")
+    public ApiResponse<Map<String, Object>> getClassScoreAnalysis(@PathVariable Long classId) {
+        try {
+            Map<String, Object> analysis = teacherService.getClassScoreAnalysis(classId);
+            return ApiResponse.success(analysis);
+        } catch (Exception e) {
+            log.error("获取班级成绩分析失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 解析学生Excel文件
+     */
+    private List<Map<String, Object>> parseStudentExcelFile(MultipartFile file) throws Exception {
+        List<Map<String, Object>> studentData = new ArrayList<>();
+        
+        try (InputStream inputStream = file.getInputStream();
+             Workbook workbook = WorkbookFactory.create(inputStream)) {
+            
+            Sheet sheet = workbook.getSheetAt(0);
+            
+            // 跳过标题行，从第二行开始
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+                
+                try {
+                    Map<String, Object> student = new HashMap<>();
+                    
+                    // 获取单元格值
+                    String studentId = getStringCellValue(row.getCell(0));
+                    String name = getStringCellValue(row.getCell(1));
+                    String gender = getStringCellValue(row.getCell(2));
+                    String phone = getStringCellValue(row.getCell(3));
+                    String email = getStringCellValue(row.getCell(4));
+                    
+                    // 验证必要字段
+                    if (studentId == null || studentId.isEmpty() ||
+                        name == null || name.isEmpty()) {
+                        log.warn("第 {} 行数据不完整，跳过", i + 1);
+                        continue;
+                    }
+                    
+                    student.put("studentId", studentId);
+                    student.put("name", name);
+                    student.put("gender", gender);
+                    student.put("phone", phone);
+                    student.put("email", email);
+                    
+                    studentData.add(student);
+                } catch (Exception e) {
+                    log.warn("第 {} 行解析失败: {}", i + 1, e.getMessage());
+                }
+            }
+            
+            log.info("Excel 文件解析完成，共解析 {} 条学生记录", studentData.size());
+        }
+        
+        return studentData;
+    }
+    
+    /**
+     * 获取字符串单元格值
+     */
+    private String getStringCellValue(Cell cell) {
+        if (cell == null) return null;
+        
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case NUMERIC:
+                return String.valueOf((int) cell.getNumericCellValue());
+            default:
+                return null;
         }
     }
 }

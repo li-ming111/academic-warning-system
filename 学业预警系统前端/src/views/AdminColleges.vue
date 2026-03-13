@@ -14,10 +14,13 @@
     <!-- 学院列表 -->
     <el-card>
       <template #header>
-        <div class="card-header">学院列表</div>
+        <div class="card-header">学院列表（总数：{{ collegeList.length }}）</div>
       </template>
 
-      <el-table :data="collegeList" stripe>
+      <div v-if="collegeList.length === 0" style="padding: 20px; text-align: center; color: #999;">
+        暂无数据
+      </div>
+      <el-table v-else :data="collegeList" stripe>
         <el-table-column prop="id" label="学院ID" width="100"></el-table-column>
         <el-table-column prop="name" label="学院名称" width="200"></el-table-column>
         <el-table-column prop="studentCount" label="学生数" width="100"></el-table-column>
@@ -83,14 +86,20 @@ onMounted(async () => {
 
 const loadColleges = async () => {
   try {
+    console.log('[AdminColleges] 开始加载学院列表...')
     const response = await adminAPI.getColleges()
-    if (response && response.code === 0) {
-      collegeList.value = response.data || []
-    } else if (Array.isArray(response)) {
+    console.log('[AdminColleges] 获取响应:', response)
+    if (Array.isArray(response)) {
       collegeList.value = response
+      console.log('[AdminColleges] 学院列表已加载:', collegeList.value.length, '条数据')
+    } else if (response && response.code === 0) {
+      collegeList.value = response.data || []
+      console.log('[AdminColleges] 学院列表已加载:', collegeList.value.length, '条数据')
+    } else {
+      console.warn('[AdminColleges] 响应格式异常:', response)
     }
   } catch (error) {
-    console.error('加载学院列表失败:', error)
+    console.error('[AdminColleges] 加载学院列表失败:', error)
   }
 }
 

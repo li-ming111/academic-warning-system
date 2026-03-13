@@ -13,6 +13,8 @@ import NotificationCenter from '../views/student/NotificationCenter.vue'
 import BenchmarkAnalysis from '../views/student/BenchmarkAnalysis.vue'
 import AppealManagement from '../views/student/AppealManagement.vue'
 import AssistanceFeedback from '../views/student/AssistanceFeedback.vue'
+import ClassMembers from '../views/student/ClassMembers.vue'
+import ClassRanking from '../views/student/ClassRanking.vue'
 import StudentLayout from '../views/StudentLayout.vue'
 import TeacherDashboard from '../views/TeacherDashboard.vue'
 import TeacherRegister from '../views/TeacherRegister.vue'
@@ -49,6 +51,7 @@ import AdminSettings from '../views/AdminSettings.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import TeacherLayout from '../views/TeacherLayout.vue'
 import AdminLayout from '../views/AdminLayout.vue'
+import CounselorLayout from '../views/CounselorLayout.vue'
 
 const routes = [
   {
@@ -114,6 +117,16 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'class-members',
+        component: ClassMembers,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'class-ranking',
+        component: ClassRanking,
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'settings',
         component: Settings,
         meta: { requiresAuth: true }
@@ -130,12 +143,7 @@ const routes = [
     component: CounselorRegister,
     meta: { requiresAuth: false }
   },
-  {
-    path: '/admin-register',
-    name: 'AdminRegister',
-    component: AdminRegister,
-    meta: { requiresAuth: false }
-  },
+
   {
     path: '/teacher-register',
     name: 'TeacherRegister',
@@ -254,52 +262,55 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/counselor',
+    component: CounselorLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'CounselorDashboard',
+        component: CounselorDashboard
+      },
+      {
+        path: 'students',
+        name: 'CounselorStudents',
+        component: CounselorStudents
+      },
+      {
+        path: 'warnings',
+        name: 'CounselorWarnings',
+        component: CounselorWarnings
+      },
+      {
+        path: 'courses',
+        name: 'CounselorCourses',
+        component: CounselorCourses
+      },
+      {
+        path: 'credit-monitor',
+        name: 'CounselorCreditMonitor',
+        component: CounselorCreditMonitor
+      },
+      {
+        path: 'notifications',
+        name: 'CounselorNotifications',
+        component: CounselorNotifications
+      },
+      {
+        path: 'class-management',
+        name: 'CounselorClassManagement',
+        component: CounselorClassManagement
+      },
+      {
+        path: 'settings',
+        name: 'CounselorSettings',
+        component: CounselorSettings
+      }
+    ]
+  },
+  {
     path: '/counselor-dashboard',
-    name: 'CounselorDashboard',
-    component: CounselorDashboard,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/counselor/students',
-    name: 'CounselorStudents',
-    component: CounselorStudents,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/counselor/warnings',
-    name: 'CounselorWarnings',
-    component: CounselorWarnings,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/counselor/courses',
-    name: 'CounselorCourses',
-    component: CounselorCourses,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/counselor/credit-monitor',
-    name: 'CounselorCreditMonitor',
-    component: CounselorCreditMonitor,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/counselor/notifications',
-    name: 'CounselorNotifications',
-    component: CounselorNotifications,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/counselor/class-management',
-    name: 'CounselorClassManagement',
-    component: CounselorClassManagement,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/counselor/settings',
-    name: 'CounselorSettings',
-    component: CounselorSettings,
-    meta: { requiresAuth: true }
+    redirect: '/counselor/dashboard'
   },
   {
     path: '/admin',

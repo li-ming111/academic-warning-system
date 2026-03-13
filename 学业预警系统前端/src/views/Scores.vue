@@ -289,9 +289,9 @@ const calculateStats = () => {
   
   // 计算挂科课程数
   failedCourses.value = scoresList.value.filter(c => c.scoreTotal < 60).length
-  if (failedCourses.value < 3) warnLevel.value = '🟢 低级预警'
-  else if (failedCourses.value <= 5) warnLevel.value = '🟡 中级预警'
-  else warnLevel.value = '🔴 高级预警'
+  if (failedCourses.value < 3) warnLevel.value = '低级预警'
+  else if (failedCourses.value <= 5) warnLevel.value = '中级预警'
+  else warnLevel.value = '高级预警'
 }
 
 // 打开申诉对话框

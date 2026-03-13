@@ -10,6 +10,7 @@ import com.academic.service.CounselorService;
 import com.academic.service.CollegeService;
 import com.academic.mapper.CollegeMapper;
 import com.academic.mapper.MajorMapper;
+import com.academic.mapper.CourseMapper;
 import com.academic.entity.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -31,11 +33,12 @@ public class AuthController {
     private final CollegeService collegeService;
     private final CollegeMapper collegeMapper;
     private final MajorMapper majorMapper;
+    private final CourseMapper courseMapper;
     private final PasswordEncoder passwordEncoder;
 
     public AuthController(UserService userService, StudentService studentService,
                          TeacherService teacherService, CounselorService counselorService,
-                         CollegeService collegeService, CollegeMapper collegeMapper, MajorMapper majorMapper, PasswordEncoder passwordEncoder) {
+                         CollegeService collegeService, CollegeMapper collegeMapper, MajorMapper majorMapper, CourseMapper courseMapper, PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.studentService = studentService;
         this.teacherService = teacherService;
@@ -43,6 +46,7 @@ public class AuthController {
         this.collegeService = collegeService;
         this.collegeMapper = collegeMapper;
         this.majorMapper = majorMapper;
+        this.courseMapper = courseMapper;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -70,6 +74,36 @@ public class AuthController {
             return ApiResponse.success(colleges);
         } catch (Exception e) {
             log.error("获取学院列表失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取所有课程列表
+     */
+    @GetMapping("/courses")
+    public ApiResponse<List<Course>> getAllCourses() {
+        try {
+            List<Course> courses = courseMapper.selectList(null);
+            return ApiResponse.success(courses);
+        } catch (Exception e) {
+            log.error("获取课程列表失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 根据学院ID获取专业列表
+     */
+    @GetMapping("/majors")
+    public ApiResponse<List<Major>> getMajorsByCollege(@RequestParam Long collegeId) {
+        try {
+            QueryWrapper<Major> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("college_id", collegeId);
+            List<Major> majors = majorMapper.selectList(queryWrapper);
+            return ApiResponse.success(majors);
+        } catch (Exception e) {
+            log.error("获取专业列表失败", e);
             return ApiResponse.error(e.getMessage());
         }
     }
@@ -145,10 +179,15 @@ public class AuthController {
             }
             String phone = (String) params.get("phone");
             String email = (String) params.get("email");
+                
 
+    
             // 验证必填项
             if (username == null || username.trim().isEmpty()) {
                 throw new RuntimeException("工号为必填项");
+            }
+            if (username.trim().length() != 5) {
+                throw new RuntimeException("工号必须是5位");
             }
             if (password == null || password.trim().isEmpty()) {
                 throw new RuntimeException("密码为必填项");
@@ -160,18 +199,18 @@ public class AuthController {
                 throw new RuntimeException("所属学院为必填项");
             }
             if (phone == null || phone.trim().isEmpty()) {
-                throw new RuntimeException("手机号为必填项");
+                throw new RuntimeException("手機号为必填项");
             }
             if (email == null || email.trim().isEmpty()) {
                 throw new RuntimeException("邮箱为必填项");
             }
-
+    
             // 验证学院是否存在
             College college = collegeService.getById(collegeId);
             if (college == null) {
                 throw new RuntimeException("学院不存在");
             }
-
+    
             // 创建用户对象
             User user = new User();
             user.setUsername(username);
@@ -180,13 +219,14 @@ public class AuthController {
             user.setEmail(email);
             user.setName(name);
             user.setRole(2); // 教师角色
-
+    
             // 创建教师档案
             TeacherProfile profile = new TeacherProfile();
             profile.setCollegeId(collegeId);
-
+    
             // 调用注册服务
             Long userId = teacherService.registerTeacher(user, profile);
+                
             Map<String, Object> result = new HashMap<>();
             result.put("userId", userId);
             result.put("username", username);
@@ -207,6 +247,7 @@ public class AuthController {
         try {
             String username = (String) params.get("username");
             String password = (String) params.get("password");
+            String name = (String) params.get("name");
             String majorCode = (String) params.get("majorCode");
             String phone = (String) params.get("phone");
             String email = (String) params.get("email");
@@ -217,6 +258,9 @@ public class AuthController {
             }
             if (password == null || password.trim().isEmpty()) {
                 throw new RuntimeException("密码为必填项");
+            }
+            if (name == null || name.trim().isEmpty()) {
+                throw new RuntimeException("姓名为必填项");
             }
             if (majorCode == null || majorCode.trim().isEmpty()) {
                 throw new RuntimeException("专业为必填项");
@@ -241,6 +285,7 @@ public class AuthController {
             user.setPassword(passwordEncoder.encode(password));
             user.setPhone(phone);
             user.setEmail(email);
+            user.setName(name);
             user.setRole(4);
 
             CounselorProfile profile = new CounselorProfile();

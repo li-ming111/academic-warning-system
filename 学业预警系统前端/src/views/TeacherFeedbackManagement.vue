@@ -1,7 +1,7 @@
 <template>
   <div class="teacher-feedback-management">
     <div class="page-header">
-      <h1>💬 学生反馈管理</h1>
+      <h1>学生反馈管理</h1>
       <p>查看和回复学生反馈，管理反馈分类</p>
     </div>
 
@@ -44,7 +44,7 @@
     <!-- 反馈列表 -->
     <el-card>
       <template #header>
-        <div class="card-header">📋 反馈列表</div>
+        <div class="card-header">反馈列表</div>
       </template>
 
       <el-table :data="feedbacks" stripe v-loading="loading">
@@ -149,7 +149,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { teacherAPI } from '@/api/index'
 import { getUserId } from '@/utils/userUtils'
 import { ElMessage } from 'element-plus'
@@ -164,6 +164,7 @@ const replyDialogVisible = ref(false)
 const viewReplyDialogVisible = ref(false)
 const selectedFeedback = ref(null)
 const replyContent = ref('')
+const isMounted = ref(false)
 
 // 计算统计信息
 const pendingCount = computed(() => 
@@ -179,12 +180,19 @@ const replyRate = computed(() => {
   return Math.round((repliedCount.value / feedbacks.value.length) * 100)
 })
 
-onMounted(async () => {
-  await loadFeedbacks()
+onMounted(() => {
+  isMounted.value = true
+  loadFeedbacks()
+})
+
+onUnmounted(() => {
+  isMounted.value = false
 })
 
 // 加载反馈列表
 const loadFeedbacks = async () => {
+  if (!isMounted.value) return
+  
   loading.value = true
   try {
     const userId = getUserId()
@@ -197,15 +205,21 @@ const loadFeedbacks = async () => {
       currentPage.value, 
       pageSize.value
     )
+    
+    if (!isMounted.value) return
+    
     if (Array.isArray(response)) {
       feedbacks.value = response
       totalFeedbacks.value = response.length
     }
   } catch (error) {
+    if (!isMounted.value) return
     console.error('加载反馈列表失败:', error)
     ElMessage.error('加载数据失败')
   } finally {
-    loading.value = false
+    if (isMounted.value) {
+      loading.value = false
+    }
   }
 }
 
@@ -228,6 +242,8 @@ const openReplyDialog = (row) => {
 
 // 提交回复
 const submitReply = async () => {
+  if (!isMounted.value) return
+  
   if (!replyContent.value.trim()) {
     ElMessage.warning('请输入回复内容')
     return
@@ -237,10 +253,14 @@ const submitReply = async () => {
     await teacherAPI.replyToFeedback(selectedFeedback.value.id, {
       reply_content: replyContent.value
     })
+    
+    if (!isMounted.value) return
+    
     ElMessage.success('回复成功')
     replyDialogVisible.value = false
     await loadFeedbacks()
   } catch (error) {
+    if (!isMounted.value) return
     console.error('回复失败:', error)
     ElMessage.error('回复失败')
   }

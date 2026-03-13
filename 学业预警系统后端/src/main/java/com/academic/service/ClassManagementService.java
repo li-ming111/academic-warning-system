@@ -13,7 +13,7 @@ public interface ClassManagementService extends IService<Class> {
     /**
      * 创建班级
      */
-    Long createClass(String name, Long majorId);
+    Long createClass(String name, Long majorId, Long collegeId);
 
     /**
      * 获取班级列表

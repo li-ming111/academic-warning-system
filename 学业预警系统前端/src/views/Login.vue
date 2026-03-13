@@ -3,7 +3,7 @@
     <div class="login-wrapper">
       <div class="login-card">
         <div class="login-header">
-          <div class="logo-icon"></div>
+          <img src="@/assets/xiaohui.jpg" alt="哈尔滨信息工程学院" class="logo-image">
           <h1>学业预警系统</h1>
           <p>智能学业预警与帮扶平台</p>
         </div>
@@ -60,10 +60,9 @@
 
         <div class="login-links">
           <span>快速注册：</span>
-          <router-link to="/register" class="link">👨‍🎓 学生</router-link>
-          <router-link to="/teacher-register" class="link">👨‍🏫 教师</router-link>
-          <router-link to="/counselor-register" class="link">👔 辅导员</router-link>
-          <router-link to="/admin-register" class="link">⚙️ 管理员</router-link>
+          <router-link to="/register" class="link">学生</router-link>
+          <router-link to="/teacher-register" class="link">教师</router-link>
+          <router-link to="/counselor-register" class="link">辅导员</router-link>
         </div>
 
         <el-alert 
@@ -130,6 +129,8 @@ const handleLogin = async () => {
   //   return
   // }
 
+  console.log('登录信息:', { username: loginForm.value.username, password: loginForm.value.password })
+
   loading.value = true
   try {
     const response = await authAPI.login(loginForm.value.username, loginForm.value.password)
@@ -144,18 +145,36 @@ const handleLogin = async () => {
       if (response.name) {
         localStorage.setItem('userName', response.name)
       } else {
-        // 如果后端没有返回 name，使用 username 作为默认值
-        localStorage.setItem('userName', response.username || '')
+        // 如果后端没有返回 name，根据角色设置默认名称
+        const role = String(response.role)
+        if (role === '2' || role === 'teacher') {
+          localStorage.setItem('userName', '教师')
+        } else if (role === '1' || role === 'student') {
+          localStorage.setItem('userName', '学生')
+        } else if (role === '3' || role === 'admin') {
+          localStorage.setItem('userName', '管理员')
+        } else if (role === '4' || role === 'counselor') {
+          localStorage.setItem('userName', '辅导员')
+        } else {
+          localStorage.setItem('userName', response.username || '用户')
+        }
       }
-      // 保存不同角色的profile ID
-      if (response.studentId) localStorage.setItem('studentId', response.studentId)
+      console.log('登录成功，响应数据:', response)
+      // 保存学号
+      const role = String(response.role)
+      if (role === '1' || role === 'student') {
+        // 学生：username 就是学号
+        localStorage.setItem('studentId', response.username)
+      } else if (response.studentId) {
+        // 非学生：执行其他角色的 studentId
+        localStorage.setItem('studentId', response.studentId)
+      }
       if (response.teacherId) localStorage.setItem('teacherId', response.teacherId)
       if (response.counselorId) localStorage.setItem('counselorId', response.counselorId)
       if (response.adminId) localStorage.setItem('adminId', response.adminId)
       ElMessage.success('登录成功')
       
       // 根据用户角色跳转（角色值：1=学生, 2=教师, 3=管理员, 4=辅导员）
-      const role = String(response.role)  // 转换为字符串确保比较正确
       console.log('登录成功，role:', role, 'type:', typeof role)
       if (role === '1' || role === 'student') {
         router.push('/dashboard')
@@ -260,11 +279,16 @@ onMounted(() => {
   margin-bottom: 40px;
 }
 
-.logo-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
+.logo-image {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 16px;
   display: inline-block;
   animation: bounce 2s ease-in-out infinite;
+  border-radius: 12px;
+  background: white;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
 }
 
 .login-header h1 {
@@ -295,15 +319,15 @@ onMounted(() => {
 }
 
 .login-input :deep(.el-input__wrapper:hover) {
-  border-color: #551EFF;
-  background-color: #F0F4FF;
-  box-shadow: 0 4px 12px rgba(85, 31, 255, 0.1);
+  border-color: #4facfe;
+  background-color: #E6F7FF;
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.1);
 }
 
 .login-input :deep(.el-input__wrapper:focus-within) {
-  border-color: #551EFF;
+  border-color: #4facfe;
   background-color: #FFFFFF;
-  box-shadow: 0 8px 20px rgba(85, 31, 255, 0.2);
+  box-shadow: 0 8px 20px rgba(79, 172, 254, 0.2);
   transform: translateY(-2px);
 }
 
@@ -322,7 +346,7 @@ onMounted(() => {
   height: 44px;
   border: 1.5px solid #E0E0E0;
   border-radius: 12px;
-  background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   color: white;
   font-weight: 700;
   font-size: 12px;
@@ -336,9 +360,9 @@ onMounted(() => {
 }
 
 .captcha-btn:hover {
-  background: linear-gradient(135deg, #764BA2 0%, #667EEA 100%);
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 20px rgba(79, 172, 254, 0.3);
 }
 
 .login-btn {
@@ -347,17 +371,17 @@ onMounted(() => {
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 1px;
-  background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   border: none;
   margin-top: 28px;
   border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 6px 20px rgba(79, 172, 254, 0.3);
 }
 
 .login-btn:hover {
-  background: linear-gradient(135deg, #764BA2 0%, #667EEA 100%);
-  box-shadow: 0 10px 28px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+  box-shadow: 0 10px 28px rgba(79, 172, 254, 0.4);
   transform: translateY(-3px);
 }
 
@@ -365,12 +389,12 @@ onMounted(() => {
   text-align: center;
   margin-top: 30px;
   font-size: 14px;
-  color: #551EFF;
+  color: #4facfe;
   animation: fadeInUp 0.8s ease-out 0.2s both;
 }
 
 .link {
-  color: #551EFF;
+  color: #4facfe;
   text-decoration: none;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   margin: 0 6px;
@@ -385,7 +409,7 @@ onMounted(() => {
   left: 0;
   width: 0;
   height: 2px;
-  background: #551EFF;
+  background: #4facfe;
   transition: width 0.3s ease;
 }
 

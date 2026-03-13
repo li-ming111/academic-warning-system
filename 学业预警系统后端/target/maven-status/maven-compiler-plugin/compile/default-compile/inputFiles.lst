@@ -14,6 +14,7 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\dto\AdminDashboardRes
 D:\ABS\学业预警系统后端\src\main\java\com\academic\dto\LoginRequest.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\dto\LoginResponse.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\dto\ScoreAppealRequest.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\dto\ScoreImportRequest.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\dto\ScoreResponse.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\dto\StatisticsResponse.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\dto\StudentDashboardResponse.java
@@ -43,6 +44,7 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\ScoreLog.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\SecurityLog.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\StudentProfile.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\SubscriptionPreference.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\TeacherCourse.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\TeacherProfile.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\User.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\WarningRule.java
@@ -69,6 +71,7 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\ScoreMapper.ja
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\SecurityLogMapper.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\StudentProfileMapper.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\SubscriptionPreferenceMapper.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\TeacherCourseMapper.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\TeacherProfileMapper.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\UserMapper.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\WarningMapper.java
@@ -92,8 +95,10 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\service\CourseTeachin
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\CreditCalculationService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\DataExportService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\ElectiveSelectionService.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\service\ExcelScoreImportService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\ExportService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\FeedbackService.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\ActivityService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\AdminServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\AssistanceEvaluationServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\AssistancePlanServiceImpl.java
@@ -107,6 +112,7 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\Counselo
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\CounselorNotificationServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\CounselorScoreServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\CounselorServiceImpl.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\ExcelScoreImportServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\ExportServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\FeedbackServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\MajorServiceImpl.java

@@ -89,9 +89,9 @@ const initChart = () => {
     const option = {
       series: [{
         data: [
-          { value: stats.value.highWarnings || 45, name: '🔴 红色预警' },
-          { value: stats.value.mediumWarnings || 32, name: '🟡 黄色预警' },
-          { value: stats.value.lowWarnings || 21, name: '🔵 蓝色预警' }
+          { value: stats.value.highWarnings || 45, name: '红色预警' },
+          { value: stats.value.mediumWarnings || 32, name: '黄色预警' },
+          { value: stats.value.lowWarnings || 21, name: '蓝色预警' }
         ],
         type: 'pie'
       }]

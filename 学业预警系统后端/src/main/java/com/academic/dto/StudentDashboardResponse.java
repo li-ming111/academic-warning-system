@@ -9,6 +9,8 @@ public class StudentDashboardResponse {
 
     private Integer courseCount;  // 本学期课程数
 
+    private Integer totalCourses;  // 总学分（累计修过的课程数）
+
     private BigDecimal gpa;  // GPA
 
     private Long warningCount;  // 预警数量

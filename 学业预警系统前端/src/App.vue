@@ -1,8 +1,8 @@
 <template>
   <div class="app-wrapper">
-    <!-- 固定侧边栏 - 仅在已登录+靐登录注册页显示（教师、学生角色使用专用布局，不显示此导航） -->
+    <!-- 固定侧边栏 - 仅在已登录+非登录注册页显示（教师、学生、管理员角色使用专用布局，不显示此导航） -->
     <aside 
-      v-if="isLoggedIn && !isPureAuthPage && !isTeacher && !isStudent" 
+      v-if="isLoggedIn && !isPureAuthPage && !isTeacher && !isStudent && !isAdmin" 
       class="sidebar"
       :class="{ 'sidebar-collapsed': isCollapsed }"
     >
@@ -109,12 +109,12 @@
     <div 
       :class="[
         'main-wrapper', 
-        { 'full-wrapper': !isLoggedIn || isPureAuthPage || isTeacher || isStudent },
-        { 'main-wrapper-collapsed': isLoggedIn && !isPureAuthPage && !isTeacher && !isStudent && isCollapsed }
+        { 'full-wrapper': !isLoggedIn || isPureAuthPage || isTeacher || isStudent || isAdmin || isCounselor },
+        { 'main-wrapper-collapsed': isLoggedIn && !isPureAuthPage && !isTeacher && !isStudent && !isAdmin && !isCounselor && isCollapsed }
       ]"
     >
       <!-- 深部 -->
-      <header v-if="isLoggedIn && !isPureAuthPage && !isTeacher && !isStudent" class="app-header" :class="{ 'admin-header': isAdmin }">
+      <header v-if="isLoggedIn && !isPureAuthPage && !isTeacher && !isStudent && !isAdmin && !isCounselor" class="app-header" :class="{ 'admin-header': isAdmin }">
         <div class="header-content">{{ isAdmin ? '学业预警系统 - 管理员端' : '学业预警与帮扶系统' }}</div>
         <div v-if="!isAdmin" class="header-user">
           {{ userName }} | {{ roleLabel }}
@@ -323,7 +323,7 @@ body,
 }
 
 .sidebar-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #66b1ff 100%);
   color: white;
   padding: 0 14px;
   height: 64px;
@@ -488,7 +488,7 @@ body,
 
 /* 头部 */
 .app-header {
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+  background: linear-gradient(90deg, #667eea 0%, #66b1ff 50%, #667eea 100%);
   color: white;
   padding: 0 28px;
   height: 64px;
@@ -567,7 +567,7 @@ body,
 
 .full-wrapper .app-main {
   flex: 1;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #66b1ff 100%);
   padding: 0;
 }
 </style>
@@ -611,7 +611,7 @@ html {
 }
 
 .full-wrapper .app-main {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background: linear-gradient(135deg, #667eea 0%, #66b1ff 100%) !important;
 }
 
 /* Element Plus 全局组件样式 */

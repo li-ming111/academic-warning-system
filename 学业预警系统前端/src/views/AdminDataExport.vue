@@ -244,7 +244,7 @@
             </div>
 
             <el-button type="success" size="large" @click="backupNow" style="margin-bottom: 20px;">
-              🔒 立即备份数据
+              立即备份数据
             </el-button>
 
             <!-- 备份列表 -->

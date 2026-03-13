@@ -30,12 +30,13 @@ public class ClassManagementServiceImpl extends ServiceImpl<ClassMapper, Class> 
 
     @Override
     @Transactional
-    public Long createClass(String name, Long majorId) {
+    public Long createClass(String name, Long majorId, Long collegeId) {
         Class clazz = new Class();
         clazz.setName(name);
         clazz.setMajorId(majorId);
+        clazz.setCollegeId(collegeId);
         this.save(clazz);
-        log.info("班级创建成功: {} (专业ID: {})", name, majorId);
+        log.info("班级创建成功: {} (专业ID: {}, 学院ID: {})", name, majorId, collegeId);
         return clazz.getId();
     }
 

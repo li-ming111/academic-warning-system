@@ -93,7 +93,7 @@
 
         <el-divider></el-divider>
 
-        <p><strong>💡 提醒：</strong>坚持完成帮扶计划，定期与教师沟通，这会显著提升您的学业成绩。</p>
+        <p><strong>提醒：</strong>坚持完成帮扶计划，定期与教师沟通，这会显著提升您的学业成绩。</p>
       </div>
     </el-dialog>
   </div>

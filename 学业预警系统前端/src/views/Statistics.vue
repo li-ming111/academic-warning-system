@@ -348,9 +348,9 @@ const initWarningPieChart = () => {
 
   const chart = echarts.init(chartContainer);
   const data = [
-    { value: statistics.value.highWarningCount, name: '红色预警' },
+    { value: statistics.value.lowWarningCount, name: '蓝色预警' },
     { value: statistics.value.mediumWarningCount, name: '黄色预警' },
-    { value: statistics.value.lowWarningCount, name: '绿色预警' }
+    { value: statistics.value.highWarningCount, name: '红色预警' }
   ].filter(item => item.value > 0 || statistics.value.highWarningCount + statistics.value.mediumWarningCount + statistics.value.lowWarningCount === 0);
 
   const option = {
@@ -368,7 +368,7 @@ const initWarningPieChart = () => {
     },
     legend: {
       bottom: 10,
-      data: ['红色预警', '黄色预警', '绿色预警'],
+      data: ['蓝色预警', '黄色预警', '红色预警'],
       textStyle: { color: '#666' }
     },
     series: [
@@ -387,9 +387,9 @@ const initWarningPieChart = () => {
           }
         },
         data: [
-          { value: statistics.value.highWarningCount, name: '红色预警', itemStyle: { color: '#f56c6c' } },
+          { value: statistics.value.lowWarningCount, name: '蓝色预警', itemStyle: { color: '#409eff' } },
           { value: statistics.value.mediumWarningCount, name: '黄色预警', itemStyle: { color: '#e6a23c' } },
-          { value: statistics.value.lowWarningCount, name: '绿色预警', itemStyle: { color: '#67c23a' } }
+          { value: statistics.value.highWarningCount, name: '红色预警', itemStyle: { color: '#f56c6c' } }
         ]
       }
     ]

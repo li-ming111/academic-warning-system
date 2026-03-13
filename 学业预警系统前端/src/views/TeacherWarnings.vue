@@ -1,7 +1,7 @@
 <template>
   <div class="teacher-warnings">
     <div class="page-header">
-      <h1>⚠️ 学业预警管理</h1>
+      <h1>学业预警管理</h1>
       <p>处理学生预警、帮扶和沟通记录</p>
     </div>
 
@@ -32,7 +32,7 @@
       </template>
 
       <el-tabs>
-        <el-tab-pane :label="`🔴 红色预警 (${warningStats.highWarnings || 0})`">
+        <el-tab-pane :label="`红色预警 (${warningStats.highWarnings || 0})`">
           <div class="warning-list">
             <div v-if="warnings.high.length === 0" class="empty-state">暂无红色预警</div>
             <div v-for="warning in warnings.high" :key="warning.id" class="warning-item">
@@ -52,7 +52,7 @@
           </div>
         </el-tab-pane>
 
-        <el-tab-pane :label="`🟡 黄色预警 (${warningStats.mediumWarnings || 0})`">
+        <el-tab-pane :label="`黄色预警 (${warningStats.mediumWarnings || 0})`">
           <div class="warning-list">
             <div v-if="warnings.medium.length === 0" class="empty-state">暂无黄色预警</div>
             <div v-for="warning in warnings.medium" :key="warning.id" class="warning-item">
@@ -71,7 +71,7 @@
           </div>
         </el-tab-pane>
 
-        <el-tab-pane :label="`🔵 蓝色预警 (${warningStats.lowWarnings || 0})`">
+        <el-tab-pane :label="`蓝色预警 (${warningStats.lowWarnings || 0})`">
           <div v-if="warnings.low.length === 0" class="empty-state">暂无蓝色预警</div>
         </el-tab-pane>
       </el-tabs>
@@ -117,9 +117,11 @@
         <p><strong>预警级别：</strong>{{ detailForm.level }}</p>
         <p><strong>历史沟通：</strong></p>
         <el-timeline>
-          <el-timeline-item v-for="i in 2" :key="i" :timestamp="`2024-12-0${i}`">
-            <p v-if="i === 1">第一次沟通：学生反应基础不足，需要额外辅导</p>
-            <p v-else>第二次沟通：已参加补课，需要继续跟踪</p>
+          <el-timeline-item v-for="(record, index) in communicationRecords" :key="index" :timestamp="record.timestamp">
+            <p>{{ record.content }}</p>
+          </el-timeline-item>
+          <el-timeline-item v-if="communicationRecords.length === 0">
+            <p>暂无沟通记录</p>
           </el-timeline-item>
         </el-timeline>
       </div>
@@ -162,6 +164,8 @@ const detailForm = ref({
   score: '',
   level: ''
 })
+
+const communicationRecords = ref([])
 
 onMounted(async () => {
   await loadWarnings()
@@ -206,13 +210,15 @@ const handleWarning = (warning) => {
 }
 
 // 查看详情
-const viewDetails = (warning) => {
+const viewDetails = async (warning) => {
   detailForm.value = {
     studentName: warning.studentName,
     course: warning.courseName,
     score: warning.score,
     level: warning.level
   }
+  // 加载沟通记录
+  communicationRecords.value = [] // 暂时设置为空数组
   detailDialogVisible.value = true
 }
 
@@ -260,10 +266,10 @@ const submitHandle = async () => {
 .page-header {
   margin-bottom: 28px;
   padding: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   border-radius: 16px;
   color: white;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 24px rgba(79, 172, 254, 0.4);
   animation: slideDown 0.6s ease-out;
 }
 

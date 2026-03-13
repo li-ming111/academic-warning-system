@@ -9,14 +9,24 @@ import java.util.List;
 public interface ScoreService extends IService<Score> {
 
     /**
-     * 获取学生当期成绩列表
+     * 获取学生成绩列表
      */
     List<Score> getStudentScores(Long studentId, String semester);
+
+    /**
+     * 获取学生挂科课程
+     */
+    List<Score> getFailedScores(Long studentId);
 
     /**
      * 计算学生GPA
      */
     BigDecimal calculateGPA(Long studentId);
+    
+    /**
+     * 计算学生指定学期的GPA
+     */
+    BigDecimal calculateGPABySemester(Long studentId, String semester);
 
     /**
      * 计算学生平均分

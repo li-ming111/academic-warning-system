@@ -40,9 +40,29 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
     }
 
     @Override
-    public BigDecimal calculateGPA(Long studentId) {
+    public List<Score> getFailedScores(Long studentId) {
         QueryWrapper<Score> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("student_id", studentId);
+        queryWrapper.lt("score_total", 60);
+        List<Score> scores = this.list(queryWrapper);
+        log.info("查询挂科课程: studentId={}, 找到 {} 条挂科记录", studentId, scores.size());
+        return scores;
+    }
+
+    @Override
+    public BigDecimal calculateGPA(Long studentId) {
+        return calculateGPABySemester(studentId, null);
+    }
+    
+    /**
+     * 计算学生指定学期的GPA，如果不指定学期则计算所有成绩的GPA
+     */
+    public BigDecimal calculateGPABySemester(Long studentId, String semester) {
+        QueryWrapper<Score> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("student_id", studentId);
+        if (semester != null && !semester.isEmpty()) {
+            queryWrapper.eq("semester", semester);
+        }
         List<Score> scores = this.list(queryWrapper);
 
         if (scores.isEmpty()) {

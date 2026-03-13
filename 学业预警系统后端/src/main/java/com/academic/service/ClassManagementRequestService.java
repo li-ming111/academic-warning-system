@@ -11,9 +11,28 @@ import java.util.Map;
 public interface ClassManagementRequestService extends IService<ClassManagementRequest> {
     
     /**
-     * 教师提交班级管理申请
+     * 教师或辅导员提交班级管理申请
+     * @param userId 用户ID（教师或辅导员）
+     * @param classId 班级ID
+     * @param userType 用户类型: 'teacher' 或 'counselor'
+     * @param reason 申请原因
      */
-    Long submitRequest(Long teacherId, Long classId, String reason);
+    Long submitRequest(Long userId, Long classId, String userType, String reason);
+    
+    /**
+     * 搜索班级
+     */
+    List<Map<String, Object>> searchClasses(String keyword);
+    
+    /**
+     * 获取教师的所有班级
+     */
+    List<Map<String, Object>> getTeacherClasses(Long teacherId);
+    
+    /**
+     * 获取辅导员的所有班级
+     */
+    List<Map<String, Object>> getCounselorClasses(Long counselorId);
     
     /**
      * 获取待审批申请列表（管理员）
@@ -36,7 +55,12 @@ public interface ClassManagementRequestService extends IService<ClassManagementR
     List<ClassManagementRequest> getTeacherRequests(Long teacherId);
     
     /**
-     * 获取班级的申请历史
+     * 获取辅导员的所有申请
+     */
+    List<ClassManagementRequest> getCounselorRequests(Long counselorId);
+    
+    /**
+     * 获取班级的申请历彲
      */
     List<ClassManagementRequest> getClassRequests(Long classId);
 }

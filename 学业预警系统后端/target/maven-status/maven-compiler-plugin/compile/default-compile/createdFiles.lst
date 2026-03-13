@@ -9,6 +9,7 @@ com\academic\dto\TeacherDashboardResponse.class
 com\academic\service\AssistanceEvaluationService.class
 com\academic\entity\College.class
 com\academic\entity\ExportHistory.class
+com\academic\service\impl\ExcelScoreImportServiceImpl.class
 com\academic\entity\ScoreAppeal.class
 com\academic\service\impl\AssistanceEvaluationServiceImpl.class
 com\academic\service\impl\ScoreServiceImpl.class
@@ -32,6 +33,7 @@ com\academic\mapper\ScoreLogMapper.class
 com\academic\mapper\ClassManagementRequestMapper.class
 com\academic\entity\AssistancePlan.class
 com\academic\service\AssistancePlanService.class
+com\academic\service\impl\ExcelScoreImportServiceImpl$1.class
 com\academic\service\impl\ClassManagementServiceImpl.class
 com\academic\mapper\CourseMapper.class
 com\academic\service\UserService.class
@@ -53,6 +55,7 @@ com\academic\mapper\ClassMapper.class
 com\academic\service\StudentNotificationService.class
 com\academic\service\impl\CacheServiceImpl.class
 com\academic\service\impl\FeedbackServiceImpl.class
+com\academic\service\ExcelScoreImportService.class
 com\academic\service\impl\TeacherServiceImpl.class
 com\academic\mapper\NotificationMapper.class
 com\academic\service\CommunicationLogService.class
@@ -62,6 +65,7 @@ com\academic\mapper\BenchmarkAnalysisMapper.class
 com\academic\mapper\StudentProfileMapper.class
 com\academic\service\StudentAppealService.class
 com\academic\service\CounselorNotificationService.class
+com\academic\service\impl\ActivityService.class
 com\academic\entity\Major.class
 com\academic\dto\StatisticsResponse.class
 com\academic\mapper\CounselorProfileMapper.class
@@ -70,6 +74,7 @@ com\academic\service\impl\AssistancePlanServiceImpl.class
 com\academic\mapper\ScoreAppealMapper.class
 com\academic\service\impl\StudentBenchmarkServiceImpl.class
 com\academic\dto\StatisticsResponse$CourseScoreInfo.class
+com\academic\entity\TeacherCourse.class
 com\academic\mapper\EnrollmentMapper.class
 com\academic\service\CounselorService.class
 com\academic\dto\StudentRegisterRequest.class
@@ -80,6 +85,7 @@ com\academic\mapper\AcademicWarningMapper.class
 com\academic\service\impl\StudentNotificationServiceImpl.class
 com\academic\dto\ScoreAppealRequest.class
 com\academic\controller\TeacherController.class
+com\academic\dto\ScoreImportRequest$ScoreImportItem.class
 com\academic\entity\ScoreLog.class
 com\academic\config\ResponseHeaderFilter.class
 com\academic\mapper\AdminProfileMapper.class
@@ -99,6 +105,7 @@ com\academic\dto\AdminDashboardResponse.class
 com\academic\service\CounselorClassService.class
 com\academic\service\CounselorScoreService.class
 com\academic\service\impl\CounselorServiceImpl.class
+com\academic\dto\ScoreImportRequest.class
 com\academic\dto\LoginResponse.class
 com\academic\entity\User.class
 com\academic\service\WarningService.class
@@ -116,6 +123,7 @@ com\academic\mapper\WarningMapper.class
 com\academic\service\impl\MajorServiceImpl.class
 com\academic\entity\CommunicationLog.class
 com\academic\service\UserSettingsService.class
+com\academic\controller\TeacherController$1.class
 com\academic\security\RequireRole.class
 com\academic\service\impl\WarningServiceImpl.class
 com\academic\service\impl\UserServiceImpl.class
@@ -138,4 +146,5 @@ com\academic\controller\CounselorController.class
 com\academic\service\impl\NotificationServiceImpl.class
 com\academic\dto\StudentDashboardResponse.class
 com\academic\service\ExportService.class
+com\academic\mapper\TeacherCourseMapper.class
 com\academic\service\NotificationService.class

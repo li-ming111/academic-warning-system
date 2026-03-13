@@ -13,6 +13,8 @@ public class Major extends BaseEntity {
 
     private String name;
 
+    private String shortName; // 专业简称
+
     private Long collegeId;
 
 }

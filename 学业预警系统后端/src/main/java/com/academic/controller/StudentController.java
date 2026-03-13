@@ -26,6 +26,7 @@ import com.academic.service.StudentNotificationService;
 import com.academic.service.StudentBenchmarkService;
 import com.academic.service.StudentAppealService;
 import com.academic.service.AssistanceEvaluationService;
+import com.academic.service.ClassManagementService;
 import com.academic.entity.SecurityLog;
 import com.academic.entity.Notification;
 import com.academic.entity.SubscriptionPreference;
@@ -64,11 +65,12 @@ public class StudentController {
     private final StudentBenchmarkService studentBenchmarkService;
     private final StudentAppealService studentAppealService;
     private final AssistanceEvaluationService assistanceEvaluationService;
+    private final ClassManagementService classManagementService;
 
     public StudentController(StudentService studentService, ScoreService scoreService,
                              WarningService warningService, AssistancePlanService assistancePlanService,
                              ScoreAppealService scoreAppealService, CommunicationLogService communicationLogService,
-                             UserSettingsService userSettingsService, StatisticsService statisticsService, ExportService exportService, NotificationService notificationService, CacheService cacheService, CourseMapper courseMapper, StudentNotificationService studentNotificationService, StudentBenchmarkService studentBenchmarkService, StudentAppealService studentAppealService, AssistanceEvaluationService assistanceEvaluationService) {
+                             UserSettingsService userSettingsService, StatisticsService statisticsService, ExportService exportService, NotificationService notificationService, CacheService cacheService, CourseMapper courseMapper, StudentNotificationService studentNotificationService, StudentBenchmarkService studentBenchmarkService, StudentAppealService studentAppealService, AssistanceEvaluationService assistanceEvaluationService, ClassManagementService classManagementService) {
         this.studentService = studentService;
         this.scoreService = scoreService;
         this.warningService = warningService;
@@ -85,6 +87,7 @@ public class StudentController {
         this.studentBenchmarkService = studentBenchmarkService;
         this.studentAppealService = studentAppealService;
         this.assistanceEvaluationService = assistanceEvaluationService;
+        this.classManagementService = classManagementService;
     }
 
     /**
@@ -181,23 +184,45 @@ public class StudentController {
             StudentDashboardResponse dashboard = new StudentDashboardResponse();
             // 计算当前学期
             String currentSemester = calculateCurrentSemester();
+            log.info("当前学期: {}", currentSemester);
 
             // 本学期课程数
             try {
                 Integer courseCount = scoreService.getCourseCount(student.getId(), currentSemester);
                 dashboard.setCourseCount(courseCount != null ? courseCount : 0);
+                log.info("学生 {} 本学期课程数: {}", student.getId(), courseCount);
             } catch (Exception e) {
                 log.warn("查询课程数失败", e);
                 dashboard.setCourseCount(0);
             }
 
-            // GPA
+            // 总学分（累计修过的课程数）
             try {
-                BigDecimal gpa = scoreService.calculateGPA(student.getId());
-                dashboard.setGpa(gpa != null ? gpa : java.math.BigDecimal.ZERO);
+                List<Score> allScores = scoreService.getStudentScores(student.getId(), null);
+                Integer totalCourses = (allScores != null) ? allScores.size() : 0;
+                dashboard.setTotalCourses(totalCourses);
+                log.info("学生 {} 累计修课程数: {}", student.getId(), totalCourses);
             } catch (Exception e) {
-                log.warn("计算GPA失败", e);
-                dashboard.setGpa(java.math.BigDecimal.ZERO);
+                log.warn("查询累计修课程数失败", e);
+                dashboard.setTotalCourses(0);
+            }
+
+            // GPA - 改为查询当前学期的 GPA 而不是累计 GPA
+            try {
+                // 调用新的方法获取当前学期的 GPA
+                BigDecimal gpa = scoreService.calculateGPABySemester(student.getId(), currentSemester);
+                dashboard.setGpa(gpa != null ? gpa : java.math.BigDecimal.ZERO);
+                log.info("学生 {} 学期 {} 的 GPA: {}", student.getId(), currentSemester, gpa);
+            } catch (Exception e) {
+                log.warn("计算GPA失败，尝试使用全部成绩计算", e);
+                try {
+                    // 如果查询当前学期失败，使用全部成绩的 GPA
+                    BigDecimal gpa = scoreService.calculateGPA(student.getId());
+                    dashboard.setGpa(gpa != null ? gpa : java.math.BigDecimal.ZERO);
+                } catch (Exception ex) {
+                    log.error("计算GPA失败", ex);
+                    dashboard.setGpa(java.math.BigDecimal.ZERO);
+                }
             }
 
             // 预警统计
@@ -552,7 +577,7 @@ public class StudentController {
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
             headers.setContentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
             headers.set(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, 
-                    "attachment; filename=scores_" + System.currentTimeMillis() + ".xlsx");
+                    "attachment; filename=个人数据_" + System.currentTimeMillis() + ".xlsx");
 
             return org.springframework.http.ResponseEntity.ok()
                     .headers(headers)
@@ -1078,6 +1103,82 @@ public class StudentController {
     }
 
     /**
+     * 获取学生学业建议
+     */
+    @GetMapping("/suggestions/{userId}")
+    public ApiResponse<List<Map<String, Object>>> getSuggestions(@PathVariable Long userId) {
+        try {
+            StudentProfile student = studentService.getByUserId(userId);
+            if (student == null) {
+                return ApiResponse.success(new java.util.ArrayList<>());
+            }
+            
+            // 生成学业建议
+            List<Map<String, Object>> suggestions = new java.util.ArrayList<>();
+            
+            // 建议1：根据GPA给出建议
+            try {
+                BigDecimal gpa = scoreService.calculateGPA(student.getId());
+                if (gpa != null) {
+                    Map<String, Object> suggestion1 = new HashMap<>();
+                    suggestion1.put("id", 1);
+                    suggestion1.put("title", "GPA提升建议");
+                    if (gpa.compareTo(new BigDecimal(3.0)) < 0) {
+                        suggestion1.put("content", "您的GPA较低，建议您多参加学习小组，及时向老师请教问题，提高学习效率。");
+                    } else if (gpa.compareTo(new BigDecimal(3.5)) < 0) {
+                        suggestion1.put("content", "您的GPA处于中等水平，建议您进一步提高学习成绩，争取获得奖学金。");
+                    } else {
+                        suggestion1.put("content", "您的GPA表现优秀，建议您考虑参加科研项目或竞赛，进一步提升自己的能力。");
+                    }
+                    suggestions.add(suggestion1);
+                }
+            } catch (Exception e) {
+                log.warn("计算GPA失败", e);
+            }
+            
+            // 建议2：根据挂科情况给出建议
+            try {
+                List<Score> failedScores = scoreService.getFailedScores(student.getId());
+                if (failedScores != null && !failedScores.isEmpty()) {
+                    Map<String, Object> suggestion2 = new HashMap<>();
+                    suggestion2.put("id", 2);
+                    suggestion2.put("title", "挂科课程建议");
+                    suggestion2.put("content", "您有挂科课程，建议您及时复习相关知识，参加补考或重修，避免影响毕业。");
+                    suggestions.add(suggestion2);
+                }
+            } catch (Exception e) {
+                log.warn("获取挂科课程失败", e);
+            }
+            
+            // 建议3：根据课程数量给出建议
+            try {
+                String currentSemester = calculateCurrentSemester();
+                Integer courseCount = scoreService.getCourseCount(student.getId(), currentSemester);
+                if (courseCount != null) {
+                    Map<String, Object> suggestion3 = new HashMap<>();
+                    suggestion3.put("id", 3);
+                    suggestion3.put("title", "课程学习建议");
+                    if (courseCount < 4) {
+                        suggestion3.put("content", "您本学期课程较少，建议您利用空闲时间学习更多专业知识，或参加实习、社会实践等活动。");
+                    } else if (courseCount > 6) {
+                        suggestion3.put("content", "您本学期课程较多，建议您合理安排时间，避免课程冲突，确保各科成绩。");
+                    } else {
+                        suggestion3.put("content", "您本学期课程安排合理，建议您保持良好的学习状态，争取取得优异成绩。");
+                    }
+                    suggestions.add(suggestion3);
+                }
+            } catch (Exception e) {
+                log.warn("获取课程数量失败", e);
+            }
+            
+            return ApiResponse.success(suggestions);
+        } catch (Exception e) {
+            log.error("获取学业建议失败", e);
+            return ApiResponse.success(new java.util.ArrayList<>());
+        }
+    }
+
+    /**
      * 获取计划的评价详情
      */
     @GetMapping("/evaluations/{planId}/detail")
@@ -1132,6 +1233,37 @@ public class StudentController {
     }
 
     /**
+     * 根据学号信息生成班级名称
+     * 规则: {专业简称}{年份后两位}{班级编号}班
+     * 例如: 2023020616 -> 计科02 + 23 + 06 -> 计科2306班
+     */
+    private String generateClassNameFromStudentId(StudentIdParser.StudentIdInfo idInfo, StudentProfile student) {
+        String majorCode = idInfo.getMajorCode();
+        String classCode = idInfo.getClassCode();
+        String yearSuffix = String.valueOf(idInfo.getEnrollmentYear()).substring(2); // 取年份后两位
+        
+        // 根据专业编码获取专业简称
+        String majorShortName = getMajorShortName(majorCode);
+        
+        return majorShortName + yearSuffix + classCode + "班";
+    }
+    
+    /**
+     * 根据专业编码获取专业简称
+     */
+    private String getMajorShortName(String majorCode) {
+        // 可以撠化为从数据库majors表的short_name字段中查询
+        switch(majorCode) {
+            case "01": return "软工";
+            case "02": return "计科";
+            case "03": return "网工";
+            case "04": return "智能";
+            case "05": return "机学";
+            default: return "专业";
+        }
+    }
+
+    /**
      * 根据学号获取班级信息
      * 根据StudentIdParser解析学号中的班级编码，返回对应的班级信息
      */
@@ -1151,33 +1283,168 @@ public class StudentController {
             result.put("classCode", idInfo.getClassCode());
             result.put("rankInClass", idInfo.getRankInClass());
 
-            // 生成班级标识
-            String classIdentifier = idInfo.getEnrollmentYear() + "级" + 
-                                   "专业" + idInfo.getMajorCode() + "班" + 
-                                   idInfo.getClassCode();
-            result.put("classIdentifier", classIdentifier);
-
-            // 尝试从数据库获取班级详情
+            // 生成班级标识 - 按照规则 {专业简称}{年份后两位}{班级编号}班
+            String classIdentifier = "";
+            
+            // 从数据库获取班级详情
             StudentProfile student = studentService.getByStudentId(studentId);
             if (student != null && student.getClassId() != null) {
                 result.put("classId", student.getClassId());
                 
-                // 尝试获取完整班级信息
+                // 始终按规则生成班级名称，确保与学号中的专业编码一致
+                classIdentifier = generateClassNameFromStudentId(idInfo, student);
+                result.put("className", classIdentifier);
+                
+                // 获取实际班级信息（仅用于参考）
                 try {
-                    com.academic.entity.Class clazz = new com.academic.entity.Class();
-                    clazz.setId(student.getClassId());
-                    // 这里需要通过服务获取班级信息
-                    result.put("classDetails", clazz);
+                    com.academic.entity.Class clazz = classManagementService.getById(student.getClassId());
+                    if (clazz != null) {
+                        result.put("classDetails", clazz);
+                    }
                 } catch (Exception e) {
                     log.warn("获取班级详情失败", e);
                 }
+            } else {
+                // 没有班级关联时，按规则生成
+                classIdentifier = generateClassNameFromStudentId(idInfo, null);
             }
+            
+            result.put("classIdentifier", classIdentifier);
 
             log.info("成功解析学号班级信息: {}", studentId);
             return ApiResponse.success(result);
 
         } catch (Exception e) {
             log.error("获取班级信息失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取班级成员列表
+     */
+    @GetMapping("/class-members/{userId}")
+    public ApiResponse<List<Map<String, Object>>> getClassMembers(@PathVariable Long userId) {
+        try {
+            StudentProfile student = studentService.getByUserId(userId);
+            if (student == null) {
+                return ApiResponse.success(new java.util.ArrayList<>());
+            }
+            
+            // 如果学生没有班级ID，则无法获取班级成员
+            if (student.getClassId() == null) {
+                return ApiResponse.success(new java.util.ArrayList<>());
+            }
+            
+            // 查询该班级的所有学生
+            List<StudentProfile> classmates = studentService.getStudentsByClassId(student.getClassId());
+            List<Map<String, Object>> result = new java.util.ArrayList<>();
+            
+            for (StudentProfile member : classmates) {
+                Map<String, Object> memberInfo = new java.util.HashMap<>();
+                memberInfo.put("id", member.getId());
+                memberInfo.put("studentId", member.getStudentId());
+                memberInfo.put("name", member.getName());
+                memberInfo.put("major", member.getMajorId());
+                
+                // 获取GPA和学分
+                try {
+                    BigDecimal gpa = scoreService.calculateGPA(member.getId());
+                    memberInfo.put("gpa", gpa != null ? gpa.doubleValue() : 0.0);
+                    
+                    List<Score> scores = scoreService.getStudentScores(member.getId(), null);
+                    memberInfo.put("credits", scores.size());
+                } catch (Exception e) {
+                    memberInfo.put("gpa", 0.0);
+                    memberInfo.put("credits", 0);
+                    log.warn("获取学生{}的GPA和学分失败", member.getId(), e);
+                }
+                
+                result.add(memberInfo);
+            }
+            
+            log.info("获取班级成员列表: classId={}, 成员数={}", student.getClassId(), result.size());
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("获取班级成员失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取班级排名排行榜
+     */
+    @GetMapping("/class-ranking/{userId}")
+    public ApiResponse<List<Map<String, Object>>> getClassRankingList(@PathVariable Long userId) {
+        try {
+            StudentProfile student = studentService.getByUserId(userId);
+            if (student == null) {
+                return ApiResponse.success(new java.util.ArrayList<>());
+            }
+            
+            // 如果学生没有班级ID，则无法获取班级排名
+            if (student.getClassId() == null) {
+                return ApiResponse.success(new java.util.ArrayList<>());
+            }
+            
+            // 查询该班级的所有学生
+            List<StudentProfile> classmates = studentService.getStudentsByClassId(student.getClassId());
+            List<Map<String, Object>> result = new java.util.ArrayList<>();
+            
+            // 为每个学生计算GPA并排序
+            java.util.List<java.util.Map<String, Object>> membersList = new java.util.ArrayList<>();
+            for (StudentProfile member : classmates) {
+                Map<String, Object> memberInfo = new java.util.HashMap<>();
+                memberInfo.put("id", member.getId());
+                memberInfo.put("studentId", member.getStudentId());
+                memberInfo.put("name", member.getName());
+                memberInfo.put("isCurrent", member.getId().equals(student.getId()));
+                
+                // 获取GPA和学分
+                try {
+                    BigDecimal gpa = scoreService.calculateGPA(member.getId());
+                    memberInfo.put("gpa", gpa != null ? gpa.doubleValue() : 0.0);
+                    
+                    List<Score> scores = scoreService.getStudentScores(member.getId(), null);
+                    memberInfo.put("credits", scores.size());
+                } catch (Exception e) {
+                    memberInfo.put("gpa", 0.0);
+                    memberInfo.put("credits", 0);
+                    log.warn("获取学生{}的GPA和学分失败", member.getId(), e);
+                }
+                
+                membersList.add(memberInfo);
+            }
+            
+            // 按GPA降序排序
+            membersList.sort((a, b) -> Double.compare((Double) b.get("gpa"), (Double) a.get("gpa")));
+            
+            // 添加排名信息
+            for (int i = 0; i < membersList.size(); i++) {
+                Map<String, Object> member = membersList.get(i);
+                member.put("rank", i + 1);
+                
+                // 确定学业状态
+                Double gpa = (Double) member.get("gpa");
+                String status;
+                if (gpa >= 3.5) {
+                    status = "优秀";
+                } else if (gpa >= 3.0) {
+                    status = "良好";
+                } else if (gpa >= 2.0) {
+                    status = "及格";
+                } else {
+                    status = "警告";
+                }
+                member.put("status", status);
+                
+                result.add(member);
+            }
+            
+            log.info("获取班级排名: classId={}, 成员数={}", student.getClassId(), result.size());
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("获取班级排名失败", e);
             return ApiResponse.error(e.getMessage());
         }
     }

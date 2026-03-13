@@ -8,6 +8,7 @@ import com.academic.service.MajorService;
 import com.academic.service.UserService;
 import com.academic.service.ClassManagementRequestService;
 import com.academic.service.DataExportService;
+import com.academic.service.impl.ActivityService;
 import com.academic.mapper.StudentProfileMapper;
 import com.academic.mapper.TeacherProfileMapper;
 import com.academic.mapper.CounselorProfileMapper;
@@ -24,6 +25,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +34,7 @@ import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 @Slf4j
 @RestController
@@ -55,6 +58,7 @@ public class AdminController {
     private final FeedbackMapper feedbackMapper;
     private final SecurityLogMapper securityLogMapper;
     private final DataExportService dataExportService;
+    private final ActivityService activityService;
     
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -65,7 +69,7 @@ public class AdminController {
                            CounselorProfileMapper counselorProfileMapper, AdminProfileMapper adminProfileMapper, AcademicWarningMapper warningMapper, CourseMapper courseMapper,
                            AuditLogMapper auditLogMapper, NotificationMapper notificationMapper, CommunicationLogMapper communicationLogMapper,
                            ScoreLogMapper scoreLogMapper, FeedbackMapper feedbackMapper, SecurityLogMapper securityLogMapper,
-                           DataExportService dataExportService) {
+                           DataExportService dataExportService, ActivityService activityService) {
         this.collegeService = collegeService;
         this.majorService = majorService;
         this.userService = userService;
@@ -83,6 +87,7 @@ public class AdminController {
         this.feedbackMapper = feedbackMapper;
         this.securityLogMapper = securityLogMapper;
         this.dataExportService = dataExportService;
+        this.activityService = activityService;
     }
 
     /**
@@ -140,6 +145,23 @@ public class AdminController {
             return ApiResponse.success(colleges);
         } catch (Exception e) {
             log.error("获取学院列表失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 根据ID获取学院
+     */
+    @GetMapping("/colleges/{collegeId}")
+    public ApiResponse<College> getCollegeById(@PathVariable Long collegeId) {
+        try {
+            College college = collegeService.getById(collegeId);
+            if (college == null) {
+                return ApiResponse.error(404, "学院不存在");
+            }
+            return ApiResponse.success(college);
+        } catch (Exception e) {
+            log.error("获取学院失败", e);
             return ApiResponse.error(e.getMessage());
         }
     }
@@ -262,13 +284,54 @@ public class AdminController {
      * 获取所有用户（分页）
      */
     @GetMapping("/users")
-    public ApiResponse<List<Map<String, Object>>> getUsers(
+    public ApiResponse<Map<String, Object>> getUsers(
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) Integer collegeId,
+            @RequestParam(required = false) Integer role) {
         try {
+            System.out.println("筛选参数: collegeId=" + collegeId + ", role=" + role);
             QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+            if (role != null) {
+                System.out.println("按角色筛选: " + role);
+                queryWrapper.eq("role", role);
+            }
             queryWrapper.orderByDesc("created_at");
             List<User> users = userService.list(queryWrapper);
+            System.out.println("角色筛选后用户数量: " + users.size());
+            
+            // 按学院筛选
+            if (collegeId != null) {
+                System.out.println("按学院筛选: " + collegeId);
+                users = users.stream().filter(user -> {
+                    if (user.getRole() == 1) { // 学生
+                        StudentProfile student = studentProfileMapper.selectOne(
+                            new QueryWrapper<StudentProfile>().eq("user_id", user.getId()));
+                        boolean match = student != null && student.getCollegeId() != null && collegeId.longValue() == student.getCollegeId();
+                        System.out.println("学生ID: " + user.getId() + ", 学院ID: " + (student != null ? student.getCollegeId() : "null") + ", 匹配: " + match);
+                        return match;
+                    } else if (user.getRole() == 2) { // 教师
+                        TeacherProfile teacher = teacherProfileMapper.selectOne(
+                            new QueryWrapper<TeacherProfile>().eq("user_id", user.getId()));
+                        boolean match = teacher != null && teacher.getCollegeId() != null && collegeId.longValue() == teacher.getCollegeId();
+                        System.out.println("教师ID: " + user.getId() + ", 学院ID: " + (teacher != null ? teacher.getCollegeId() : "null") + ", 匹配: " + match);
+                        return match;
+                    } else if (user.getRole() == 4) { // 辅导员
+                        CounselorProfile counselor = counselorProfileMapper.selectOne(
+                            new QueryWrapper<CounselorProfile>().eq("user_id", user.getId()));
+                        boolean match = counselor != null && counselor.getCollegeId() != null && collegeId.longValue() == counselor.getCollegeId();
+                        System.out.println("辅导员ID: " + user.getId() + ", 学院ID: " + (counselor != null ? counselor.getCollegeId() : "null") + ", 匹配: " + match);
+                        return match;
+                    }
+                    return false;
+                }).collect(java.util.stream.Collectors.toList());
+                System.out.println("学院筛选后用户数量: " + users.size());
+            }
+            
+            // 计算总记录数
+            int total = users.size();
+            
+            // 分页处理
             List<User> paginated = users.stream().skip((long) (page - 1) * size).limit(size).toList();
             
             List<Map<String, Object>> result = paginated.stream().map(user -> {
@@ -281,7 +344,7 @@ public class AdminController {
                 map.put("phone", user.getPhone());
                 map.put("role", String.valueOf(user.getRole()));
                 map.put("status", user.getStatus() != null ? user.getStatus() : 1);
-                map.put("password", user.getPassword());
+                map.put("password", user.getPassword() != null ? user.getPassword() : "123456");
                 map.put("updatedAt", user.getUpdatedAt());
                 
                 // 根据角色获取学院名称和学号/工号
@@ -298,6 +361,12 @@ public class AdminController {
                         if (student.getStudentId() != null) {
                             map.put("studentId", student.getStudentId());
                         }
+                        // 如果用户表中姓名为空，尝试从学生档案中获取
+                        System.out.println("用户ID: " + user.getId() + ", 用户表姓名: " + user.getName() + ", 学生档案姓名: " + student.getName());
+                        if (user.getName() == null && student.getName() != null) {
+                            System.out.println("从学生档案中获取姓名: " + student.getName());
+                            map.put("name", student.getName());
+                        }
                     }
                 } else if (user.getRole() == 2) { // 教师
                     TeacherProfile teacher = teacherProfileMapper.selectOne(
@@ -309,6 +378,10 @@ public class AdminController {
                         }
                         // 添加工号（如果teacher_profile表中有该字段）
                         // map.put("jobNumber", teacher.getJobNumber());
+                        // 如果用户表中姓名为空，保持空值（教师档案中没有姓名字段）
+                        if (user.getName() == null) {
+                            map.put("name", null);
+                        }
                     }
                 } else if (user.getRole() == 4) { // 辅导员
                     CounselorProfile counselor = counselorProfileMapper.selectOne(
@@ -320,6 +393,10 @@ public class AdminController {
                         }
                         // 添加工号（如果counselor_profile表中有该字段）
                         // map.put("jobNumber", counselor.getJobNumber());
+                        // 如果用户表中姓名为空，保持空值（辅导员档案中没有姓名字段）
+                        if (user.getName() == null) {
+                            map.put("name", null);
+                        }
                     }
                 }
                                 
@@ -328,7 +405,13 @@ public class AdminController {
                 }
                 return map;
             }).toList();
-            return ApiResponse.success(result);
+            
+            // 构建响应数据
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("data", result);
+            responseData.put("total", total);
+            
+            return ApiResponse.success(responseData);
         } catch (Exception e) {
             log.error("获取用户列表失败", e);
             return ApiResponse.error(e.getMessage());
@@ -443,7 +526,8 @@ public class AdminController {
 
             User user = new User();
             user.setUsername(username);
-            user.setPassword(password);
+            // 如果密码为空，设置默认密码123456
+            user.setPassword(password != null && !password.isEmpty() ? password : "123456");
             user.setRole(3); // 管理员角色
 
             AdminProfile profile = new AdminProfile();
@@ -453,6 +537,9 @@ public class AdminController {
             // 暂时直接保存用户和档案
             // userService.save(user);
             // profile.setUserId(user.getId());
+
+            // 记录用户注册动态
+            activityService.recordRegisterActivity(name, "管理员");
 
             Map<String, Object> result = new HashMap<>();
             result.put("userId", user.getId());
@@ -471,11 +558,28 @@ public class AdminController {
     public ApiResponse<List<Map<String, Object>>> getRules() {
         try {
             // 返回预警规则列表
-            List<Map<String, Object>> rules = List.of(
-                Map.of("id", 1L, "name", "GPA低于2.0", "threshold", 2.0, "level", "red"),
-                Map.of("id", 2L, "name", "GPA低于2.5", "threshold", 2.5, "level", "yellow"),
-                Map.of("id", 3L, "name", "单科挂科", "threshold", 60, "level", "orange")
-            );
+            List<Map<String, Object>> rules = new ArrayList<>();
+            Map<String, Object> rule1 = new HashMap<>();
+            rule1.put("id", 1L);
+            rule1.put("name", "高级预警");
+            rule1.put("condition", "挂科数量大于5科");
+            rule1.put("level", "red");
+            rules.add(rule1);
+            
+            Map<String, Object> rule2 = new HashMap<>();
+            rule2.put("id", 2L);
+            rule2.put("name", "中级预警");
+            rule2.put("condition", "挂科数量在3-5科之间");
+            rule2.put("level", "yellow");
+            rules.add(rule2);
+            
+            Map<String, Object> rule3 = new HashMap<>();
+            rule3.put("id", 3L);
+            rule3.put("name", "低级预警");
+            rule3.put("condition", "挂科数量小于3科");
+            rule3.put("level", "blue");
+            rules.add(rule3);
+            
             return ApiResponse.success(rules);
         } catch (Exception e) {
             log.error("获取规则列表失败", e);
@@ -556,7 +660,7 @@ public class AdminController {
     public ApiResponse<Map<String, Object>> getStatistics() {
         try {
             Map<String, Object> stats = new HashMap<>();
-            stats.put("totalStudents", studentProfileMapper.selectCount(null));
+            stats.put("totalStudents", userService.count(new QueryWrapper<User>().eq("role", 1)));
             stats.put("totalTeachers", userService.count(new QueryWrapper<User>().eq("role", 2)));
             stats.put("totalWarnings", warningMapper.selectCount(null));
             stats.put("totalColleges", collegeService.count());
@@ -686,6 +790,10 @@ public class AdminController {
             }
             user.setStatus(0);
             userService.updateById(user);
+            
+            // 记录用户状态变更动态
+            activityService.recordSystemActivity("用户" + user.getName() + "已被禁用");
+            
             return ApiResponse.success("用户已禁用");
         } catch (Exception e) {
             log.error("禁用用户失败", e);
@@ -705,6 +813,10 @@ public class AdminController {
             }
             user.setStatus(1);
             userService.updateById(user);
+            
+            // 记录用户状态变更动态
+            activityService.recordSystemActivity("用户" + user.getName() + "已被启用");
+            
             return ApiResponse.success("用户已启用");
         } catch (Exception e) {
             log.error("启用用户失败", e);
@@ -723,6 +835,8 @@ public class AdminController {
                 return ApiResponse.error(404, "用户不存在");
             }
             
+            String userName = user.getName();
+            
             // 情形是复杂的，最为会的做法是：
             // 1. 先看能否直接使用二sql直接执行delete
             // 2. 不行的话，看能否弆外键校驗禁用
@@ -730,6 +844,10 @@ public class AdminController {
             
             // 使用一个助手方法处理，以䅍禁用外键检查后删除
             deleteUserWithForeignKeyHandling(userId);
+            
+            // 记录用户删除动态
+            activityService.recordSystemActivity("用户" + userName + "已被删除");
+            
             return ApiResponse.success("用户已删除");
         } catch (Exception e) {
             log.error("删除用户失败", e);
@@ -785,6 +903,96 @@ public class AdminController {
      */
     private void deleteRelatedData(Long userId) {
         log.info("开始删除用户相关数据, userId: {}", userId);
+        
+        // 首先获取学生档案ID，用于删除相关的辅助计划和评估
+        Long studentProfileId = null;
+        try {
+            String getStudentProfileSql = "SELECT id FROM student_profile WHERE user_id = ?";
+            studentProfileId = jdbcTemplate.queryForObject(getStudentProfileSql, Long.class, userId);
+            if (studentProfileId != null) {
+                // 删除相关的成绩申诉记录
+                try {
+                    int appealCount = jdbcTemplate.update("DELETE FROM score_appeals WHERE student_id = ?", studentProfileId);
+                    log.info("删除成绩申诉记录 {} 条", appealCount);
+                } catch (Exception ex) {
+                    log.warn("删除成绩申诉记录失败", ex);
+                }
+                
+                // 删除相关的沟通日志记录
+                try {
+                    int commCount = jdbcTemplate.update("DELETE FROM communication_logs WHERE student_id = ?", studentProfileId);
+                    log.info("删除沟通日志记录 {} 条", commCount);
+                } catch (Exception ex) {
+                    log.warn("删除沟通日志记录失败", ex);
+                }
+                
+                // 删除相关的学生反馈记录
+                try {
+                    int feedbackCount = jdbcTemplate.update("DELETE FROM feedbacks WHERE student_id = ?", studentProfileId);
+                    log.info("删除学生反馈记录 {} 条", feedbackCount);
+                } catch (Exception ex) {
+                    log.warn("删除学生反馈记录失败", ex);
+                }
+                
+                // 删除相关的辅助评估记录
+                try {
+                    int evalCount = jdbcTemplate.update("DELETE FROM assistance_evaluations WHERE plan_id IN (SELECT id FROM assistance_plans WHERE student_id = ?)", studentProfileId);
+                    log.info("删除辅助评估记录 {} 条", evalCount);
+                } catch (Exception ex) {
+                    log.warn("删除辅助评估记录失败", ex);
+                }
+                
+                // 删除相关的辅助计划记录
+                try {
+                    int planCount = jdbcTemplate.update("DELETE FROM assistance_plans WHERE student_id = ?", studentProfileId);
+                    log.info("删除辅助计划记录 {} 条", planCount);
+                } catch (Exception ex) {
+                    log.warn("删除辅助计划记录失败", ex);
+                }
+                
+                // 删除相关的学业预警记录
+                try {
+                    int warningCount = jdbcTemplate.update("DELETE FROM academic_warnings WHERE student_id = ?", studentProfileId);
+                    log.info("删除学业预警记录 {} 条", warningCount);
+                } catch (Exception ex) {
+                    log.warn("删除学业预警记录失败", ex);
+                }
+                
+                // 删除相关的基准分析记录
+                try {
+                    int benchmarkCount = jdbcTemplate.update("DELETE FROM benchmark_analysis WHERE student_id = ?", studentProfileId);
+                    log.info("删除基准分析记录 {} 条", benchmarkCount);
+                } catch (Exception ex) {
+                    log.warn("删除基准分析记录失败", ex);
+                }
+                
+                // 删除相关的课程注册记录
+                try {
+                    int enrollmentCount = jdbcTemplate.update("DELETE FROM enrollments WHERE student_id = ?", studentProfileId);
+                    log.info("删除课程注册记录 {} 条", enrollmentCount);
+                } catch (Exception ex) {
+                    log.warn("删除课程注册记录失败", ex);
+                }
+                
+                // 删除相关的成绩记录
+                try {
+                    int scoreCount = jdbcTemplate.update("DELETE FROM scores WHERE student_id = ?", studentProfileId);
+                    log.info("删除成绩记录 {} 条", scoreCount);
+                } catch (Exception ex) {
+                    log.warn("删除成绩记录失败", ex);
+                }
+                
+                // 删除相关的订阅偏好记录
+                try {
+                    int subCount = jdbcTemplate.update("DELETE FROM subscription_preferences WHERE student_id = ?", studentProfileId);
+                    log.info("删除订阅偏好记录 {} 条", subCount);
+                } catch (Exception ex) {
+                    log.warn("删除订阅偏好记录失败", ex);
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("获取学生档案ID失败", ex);
+        }
         
         // 使用原生SQL删除所有与用户ID相关的数据
         // 对于scores_logs表，它可能不存在，所以也需要try-catch
@@ -1359,6 +1567,24 @@ public class AdminController {
     }
 
     /**
+     * 获取最近动态（系统通知）
+     */
+    @GetMapping("/activities")
+    public ApiResponse<List<Notification>> getRecentActivities() {
+        try {
+            // 查询最近的通知，按时间倒序排列
+            QueryWrapper<Notification> queryWrapper = new QueryWrapper<>();
+            queryWrapper.orderByDesc("created_at");
+            queryWrapper.last("LIMIT 10");
+            List<Notification> notifications = notificationMapper.selectList(queryWrapper);
+            return ApiResponse.success(notifications);
+        } catch (Exception e) {
+            log.error("获取最近动态失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
      * 拒绝班级管理申请
      */
     @PostMapping("/class-management/reject/{requestId}")
@@ -1369,6 +1595,52 @@ public class AdminController {
             return ApiResponse.success("申请已拒绝");
         } catch (Exception e) {
             log.error("拒绝班级管理申请失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 重置用户密码为默认密码
+     */
+    @PostMapping("/users/{userId}/reset-password")
+    public ApiResponse<String> resetPassword(@PathVariable Long userId) {
+        try {
+            User user = userService.getById(userId);
+            if (user == null) {
+                return ApiResponse.error(404, "用户不存在");
+            }
+            
+            // 设置默认密码为123456
+            user.setPassword("123456");
+            userService.updateById(user);
+            
+            return ApiResponse.success("密码已重置为默认密码: 123456");
+        } catch (Exception e) {
+            log.error("重置密码失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 查看用户密码
+     */
+    @GetMapping("/users/{userId}/password")
+    public ApiResponse<String> getUserPassword(@PathVariable Long userId) {
+        try {
+            User user = userService.getById(userId);
+            if (user == null) {
+                return ApiResponse.error(404, "用户不存在");
+            }
+            
+            // 如果密码为null或空，返回默认密码123456
+            String password = user.getPassword();
+            if (password == null || password.isEmpty()) {
+                password = "123456";
+            }
+            
+            return ApiResponse.success(password);
+        } catch (Exception e) {
+            log.error("获取用户密码失败", e);
             return ApiResponse.error(e.getMessage());
         }
     }

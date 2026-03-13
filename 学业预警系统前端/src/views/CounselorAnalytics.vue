@@ -1,7 +1,7 @@
 <template>
   <div class="counselor-analytics">
     <div class="page-header">
-      <h1>📈 数据分析</h1>
+      <h1>数据分析</h1>
       <p>班级学分不足率、预警分布、处理效率、成绩达标排名</p>
     </div>
 
@@ -9,19 +9,19 @@
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-label">学分不足率</div>
-        <div class="stat-number">12%</div>
+        <div class="stat-number">{{ analyticsStats.creditInsufficientRate }}%</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">预警处理中位数</div>
-        <div class="stat-number">2.3天</div>
+        <div class="stat-number">{{ analyticsStats.warningHandlingEfficiency }}天</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">帮扶完成率</div>
-        <div class="stat-number">68%</div>
+        <div class="stat-number">{{ analyticsStats.assistanceCompletionRate }}%</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">学分达标率</div>
-        <div class="stat-number">92%</div>
+        <div class="stat-number">{{ analyticsStats.creditAchievementRate }}%</div>
       </div>
     </div>
 
@@ -86,11 +86,13 @@ const warningChart = ref(null)
 const efficiencyChart = ref(null)
 const trendChart = ref(null)
 
-const classRanking = ref([
-  { ranking: 1, className: '二班', creditRate: 95, improvementRate: 3 },
-  { ranking: 2, className: '一班', creditRate: 92, improvementRate: 2 },
-  { ranking: 3, className: '三班', creditRate: 88, improvementRate: -1 }
-])
+const classRanking = ref([])
+const analyticsStats = ref({
+  creditInsufficientRate: 0,
+  warningHandlingEfficiency: 0,
+  assistanceCompletionRate: 0,
+  creditAchievementRate: 0
+})
 
 const creditRateColor = computed(() => {
   return [
@@ -110,15 +112,41 @@ const loadAnalyticsData = async () => {
     const counselorId = localStorage.getItem('counselorId') || getUserId()
     if (!counselorId) return
     
+    // 获取学分不足率
+    const insufficientRateResponse = await counselorAPI.getCreditInsufficientRate(counselorId)
+    if (insufficientRateResponse.data?.code === 200) {
+      analyticsStats.value.creditInsufficientRate = insufficientRateResponse.data.data || 0
+    }
+    
+    // 获取预警处理效率
+    const efficiencyResponse = await counselorAPI.getWarningHandlingEfficiency(counselorId)
+    if (efficiencyResponse.data?.code === 200) {
+      analyticsStats.value.warningHandlingEfficiency = efficiencyResponse.data.data || 0
+    }
+    
+    // 获取帮扶完成率
+    const completionResponse = await counselorAPI.getAssistancePlanCompletionRate(counselorId)
+    if (completionResponse.data?.code === 200) {
+      analyticsStats.value.assistanceCompletionRate = completionResponse.data.data || 0
+    }
+    
     // 获取班级达标率排名
     const rankingResponse = await counselorAPI.getClassCreditAchievementRanking(counselorId)
-    const rankingData = rankingResponse.data || []
-    classRanking.value = rankingData.map((item, index) => ({
-      ranking: index + 1,
-      className: item.className,
-      creditRate: parseFloat(item.achievementRate) || 0,
-      improvementRate: 0
-    }))
+    if (rankingResponse.data?.code === 200) {
+      const rankingData = rankingResponse.data.data || []
+      classRanking.value = rankingData.map((item, index) => ({
+        ranking: index + 1,
+        className: item.className,
+        creditRate: parseFloat(item.achievementRate) || 0,
+        improvementRate: 0
+      }))
+      
+      // 计算平均学分达标率
+      if (rankingData.length > 0) {
+        const totalRate = rankingData.reduce((sum, item) => sum + (parseFloat(item.achievementRate) || 0), 0)
+        analyticsStats.value.creditAchievementRate = Math.round(totalRate / rankingData.length)
+      }
+    }
   } catch (error) {
     console.error('加载数据分析失败:', error)
   }
@@ -131,9 +159,9 @@ const initCharts = () => {
     const option = {
       series: [{
         data: [
-      { value: 0, name: '🔴 红色预警' },
-          { value: 0, name: '🟡 黄色预警' },
-          { value: 0, name: '🔵 蓝色预警' }
+      { value: 0, name: '红色预警' },
+          { value: 0, name: '黄色预警' },
+          { value: 0, name: '蓝色预警' }
         ],
         type: 'pie'
       }]

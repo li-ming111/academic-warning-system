@@ -1,7 +1,7 @@
 <template>
   <div class="counselor-classes">
     <div class="page-header">
-      <h1>🏫 班级管理</h1>
+      <h1>班级管理</h1>
       <p>查看班级信息、学生名单、预警概览</p>
     </div>
 
@@ -17,8 +17,8 @@
         <el-table-column prop="year" label="年级" width="80"></el-table-column>
         <el-table-column label="预警情况" width="150">
           <template #default="{ row }">
-            <span style="color: #f56c6c;">🔴{{ row.redWarnings }} </span>
-            <span style="color: #e6a23c;">🟡{{ row.yellowWarnings }}</span>
+            <span style="color: #f56c6c;">{{ row.redWarnings }} </span>
+            <span style="color: #e6a23c;">{{ row.yellowWarnings }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">

@@ -1,7 +1,7 @@
 <template>
   <div class="counselor-warnings">
     <div class="page-header">
-      <h1>⚠️ 学生预警管理</h1>
+      <h1>学生预警管理</h1>
       <p>班级学生预警处理和追踪</p>
     </div>
 
@@ -37,7 +37,7 @@
         <el-table-column label="预警级别" width="100">
           <template #default="{ row }">
             <el-tag :type="row.level === 'red' ? 'danger' : row.level === 'yellow' ? 'warning' : 'info'">
-              {{ row.level === 'red' ? '🔴 红色' : row.level === 'yellow' ? '🟡 黄色' : '🔵 蓝色' }}
+              {{ row.level === 'red' ? '红色' : row.level === 'yellow' ? '黄色' : '蓝色' }}
             </el-tag>
           </template>
         </el-table-column>

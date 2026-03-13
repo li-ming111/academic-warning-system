@@ -1,40 +1,41 @@
 <template>
   <div class="teacher-feedback">
     <div class="page-header">
-      <h1>💬 学生反馈管理</h1>
+      <h1>学生反馈管理</h1>
       <p>查看、分类和回复学生课程反馈</p>
     </div>
 
     <!-- 反馈统计 -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-number">24</div>
+        <div class="stat-number">{{ feedbackStats.totalFeedback }}</div>
         <div class="stat-label">总反馈数</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">8</div>
+        <div class="stat-number">{{ feedbackStats.pendingReply }}</div>
         <div class="stat-label">待回复</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">4.5</div>
+        <div class="stat-number">{{ feedbackStats.averageRating }}</div>
         <div class="stat-label">平均评分</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">88%</div>
+        <div class="stat-number">{{ feedbackStats.replyRate }}%</div>
         <div class="stat-label">回复率</div>
       </div>
     </div>
 
     <!-- 筛选 -->
     <div class="filter-bar">
-      <el-select v-model="filterCategory" placeholder="反馈分类">
-        <el-option label="全部分类" value="all"></el-option>
-        <el-option label="教学方法" value="teaching"></el-option>
-        <el-option label="课程内容" value="content"></el-option>
-        <el-option label="作业布置" value="homework"></el-option>
-        <el-option label="其他" value="other"></el-option>
+      <el-select v-model="filterCategory" placeholder="反馈分类" @change="loadFeedback">
+        <el-option label="全部分类" value=""></el-option>
+        <el-option label="教学质量" value="教学质量"></el-option>
+        <el-option label="成绩问题" value="成绩问题"></el-option>
+        <el-option label="作业评分" value="作业评分"></el-option>
+        <el-option label="考试安排" value="考试安排"></el-option>
+        <el-option label="其他" value="其他"></el-option>
       </el-select>
-      <el-select v-model="filterStatus" placeholder="状态">
+      <el-select v-model="filterStatus" placeholder="状态" @change="loadFeedback">
         <el-option label="全部状态" value="all"></el-option>
         <el-option label="待回复" value="pending"></el-option>
         <el-option label="已回复" value="replied"></el-option>
@@ -44,35 +45,33 @@
     <!-- 反馈列表 -->
     <el-card>
       <template #header>
-        <div class="card-header">📝 反馈列表</div>
+        <div class="card-header">反馈列表</div>
       </template>
 
-      <div class="feedback-list">
-        <div class="feedback-item" v-for="i in 5" :key="i">
+      <div class="feedback-list" v-loading="loading">
+        <div v-if="feedbackList.length === 0" class="empty-feedback">
+          <el-empty description="暂无反馈数据"></el-empty>
+        </div>
+        <div class="feedback-item" v-for="feedback in feedbackList" :key="feedback.id">
           <div class="feedback-header">
             <div class="feedback-info">
-              <h4 class="student-name">{{ i === 1 ? '李明' : i === 2 ? '王红' : i === 3 ? '张凯' : i === 4 ? '陈杰' : '刘芳' }}</h4>
+              <h4 class="student-name">{{ feedback.studentName }}</h4>
               <div class="feedback-meta">
-                <el-tag :type="i % 2 === 1 ? 'warning' : 'success'" size="small">{{ i % 2 === 1 ? '教学方法' : '课程内容' }}</el-tag>
-                <span class="feedback-time">{{ i }}小时前</span>
-                <el-rate v-model="feedbackRating[i-1]" :max="5" size="small" disabled></el-rate>
+                <el-tag :type="feedback.status === 'pending' ? 'warning' : 'success'" size="small">{{ feedback.category }}</el-tag>
+                <span class="feedback-time">{{ formatTime(feedback.createdAt) }}</span>
+                <el-rate v-model="feedback.rating" :max="5" size="small" disabled v-if="feedback.rating"></el-rate>
               </div>
             </div>
-            <el-button v-if="i % 2 === 1" type="danger" size="small" link>待回复</el-button>
-            <el-button v-else type="success" size="small" link>已回复</el-button>
+            <el-button :type="feedback.status === 'pending' ? 'danger' : 'success'" size="small" link>{{ feedback.status === 'pending' ? '待回复' : '已回复' }}</el-button>
           </div>
 
           <div class="feedback-content">
-            <p v-if="i === 1">教学进度太快，很多内容没有时间消化，希望能放慢速度或增加复习时间。</p>
-            <p v-else-if="i === 2">讲授内容很有深度，感谢老师的耐心讲解和案例分析。</p>
-            <p v-else-if="i === 3">作业量有些大，平时要花很多时间完成，建议适度减少。</p>
-            <p v-else-if="i === 4">实践课程很有价值，希望未来能增加更多实战项目。</p>
-            <p v-else>希望能提供更多学习资料和参考文献供我们深入学习。</p>
+            <p>{{ feedback.content }}</p>
           </div>
 
           <div class="feedback-actions">
-            <el-button v-if="i % 2 === 1" type="primary" @click="replyFeedback(i)">回复</el-button>
-            <el-button type="info" size="small" link @click="viewFeedback(i)">详情</el-button>
+            <el-button v-if="feedback.status === 'pending'" type="primary" @click="replyFeedback(feedback)">回复</el-button>
+            <el-button type="info" size="small" link @click="viewFeedback(feedback)">详情</el-button>
           </div>
         </div>
       </div>
@@ -100,22 +99,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { teacherAPI } from '@/api/index'
 import { getUserId } from '@/utils/userUtils'
 
-const filterCategory = ref('all')
+const filterCategory = ref('')
 const filterStatus = ref('all')
 const replyDialogVisible = ref(false)
 const feedbackList = ref([])
-const feedbackRating = ref([5, 4, 5, 4, 5])
+const loading = ref(false)
 const feedbackStats = ref({
   totalFeedback: 0,
   pendingReply: 0,
   averageRating: 0,
   replyRate: 0
 })
+const isMounted = ref(false)
 
 const replyForm = ref({
   feedbackId: '',
@@ -124,22 +124,66 @@ const replyForm = ref({
   reply: ''
 })
 
-onMounted(async () => {
-  await loadFeedback()
+onMounted(() => {
+  isMounted.value = true
+  loadFeedback()
+})
+
+onUnmounted(() => {
+  isMounted.value = false
 })
 
 // 加载反馈数据
 const loadFeedback = async () => {
+  if (!isMounted.value) return
+  
+  loading.value = true
   try {
     const userId = getUserId()
     if (!userId) return
-    const response = await teacherAPI.getFeedback(userId)
-    if (response) {
-      feedbackList.value = response.feedbacks || []
-      feedbackStats.value = response.stats
+    
+    const response = await teacherAPI.getFeedbackList(
+      userId, 
+      filterCategory.value || undefined
+    )
+    
+    if (!isMounted.value) return
+    
+    if (response.data?.code === 200) {
+      feedbackList.value = response.data.data || []
+      updateFeedbackStats()
     }
   } catch (error) {
+    if (!isMounted.value) return
     console.error('加载反馈失败:', error)
+    ElMessage.error('加载反馈数据失败')
+  } finally {
+    if (isMounted.value) {
+      loading.value = false
+    }
+  }
+}
+
+// 更新反馈统计数据
+const updateFeedbackStats = () => {
+  const total = feedbackList.value.length
+  const pending = feedbackList.value.filter(f => f.status === 'pending').length
+  const replied = total - pending
+  
+  // 计算平均评分
+  const ratedFeedbacks = feedbackList.value.filter(f => f.rating)
+  const averageRating = ratedFeedbacks.length > 0 
+    ? (ratedFeedbacks.reduce((sum, f) => sum + f.rating, 0) / ratedFeedbacks.length).toFixed(1)
+    : 0
+  
+  // 计算回复率
+  const replyRate = total > 0 ? Math.round((replied / total) * 100) : 0
+  
+  feedbackStats.value = {
+    totalFeedback: total,
+    pendingReply: pending,
+    averageRating: averageRating,
+    replyRate: replyRate
   }
 }
 
@@ -154,27 +198,38 @@ const replyFeedback = (feedback) => {
 }
 
 const submitReply = async () => {
+  if (!isMounted.value) return
+  
   if (!replyForm.value.reply) {
     ElMessage.error('请输入回复内容')
     return
   }
   try {
-    const data = {
-      feedbackId: replyForm.value.feedbackId,
-      reply: replyForm.value.reply
-    }
-    await teacherAPI.replyFeedback(data)
+    await teacherAPI.replyToFeedback(replyForm.value.feedbackId, {
+      reply_content: replyForm.value.reply
+    })
+    
+    if (!isMounted.value) return
+    
     ElMessage.success('回复已发送')
     replyDialogVisible.value = false
     await loadFeedback()
   } catch (error) {
+    if (!isMounted.value) return
     console.error('发送回复失败:', error)
     ElMessage.error('发送回复失败')
   }
 }
 
-const viewFeedback = (id) => {
+const viewFeedback = (feedback) => {
   ElMessage.info('查看反馈详情')
+}
+
+// 格式化时间
+const formatTime = (time) => {
+  if (!time) return ''
+  const date = new Date(time)
+  return date.toLocaleString('zh-CN')
 }
 </script>
 
@@ -188,7 +243,7 @@ const viewFeedback = (id) => {
 .page-header {
   margin-bottom: 28px;
   padding: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #66b1ff 100%);
   border-radius: 16px;
   color: white;
   box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
@@ -239,7 +294,7 @@ const viewFeedback = (id) => {
 .stat-number {
   font-size: 32px;
   font-weight: bold;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #66b1ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -267,7 +322,7 @@ const viewFeedback = (id) => {
 .card-header {
   font-size: 18px;
   font-weight: bold;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #66b1ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -297,7 +352,7 @@ const viewFeedback = (id) => {
 .feedback-item:hover {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
   transform: translateY(-4px);
-  border-left-color: #764ba2;
+  border-left-color: #66b1ff;
 }
 
 .feedback-header {

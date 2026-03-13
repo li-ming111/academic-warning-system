@@ -84,7 +84,7 @@
           <p style="color: #666; font-size: 13px; margin-bottom: 10px;">
             您可以随时导出您的个人数据，包括成绩、预警记录等。
           </p>
-          <el-button @click="exportUserData">导出个人数据（ZIP）</el-button>
+          <el-button @click="exportUserData">导出个人数据（Excel）</el-button>
         </el-card>
 
         <!-- 安全日志 -->
@@ -98,7 +98,7 @@
               <el-tag type="success">正常</el-tag>
             </p>
             <p><strong>最后登录：</strong>2025-12-11 23:30:00 | 地点：Windows 10</p>
-            <p style="color: #f56c6c;"><strong>⚠️ 建议：</strong>定期修改密码，不要在公共场所登录，谨慎点击邮件中的链接。</p>
+            <p style="color: #f56c6c;"><strong>建议：</strong>定期修改密码，不要在公共场所登录，谨慎点击邮件中的链接。</p>
           </div>
 
           <el-divider></el-divider>
@@ -129,7 +129,7 @@
               <el-input v-model="accountInfo.studentId" disabled></el-input>
             </el-form-item>
             <el-form-item label="姓名">
-              <el-input v-model="accountInfo.fullName" disabled></el-input>
+              <el-input v-model="accountInfo.name" disabled></el-input>
             </el-form-item>
             <el-form-item label="邮箱">
               <el-input v-model="accountInfo.email"></el-input>
@@ -138,10 +138,10 @@
               <el-input v-model="accountInfo.phone"></el-input>
             </el-form-item>
             <el-form-item label="学院">
-              <el-input v-model="accountInfo.college" disabled></el-input>
+              <el-input v-model="accountInfo.collegeName" disabled></el-input>
             </el-form-item>
             <el-form-item label="专业">
-              <el-input v-model="accountInfo.major" disabled></el-input>
+              <el-input v-model="accountInfo.majorName" disabled></el-input>
             </el-form-item>
             <el-form-item label="账户创建">
               <el-input v-model="accountInfo.createdAt" disabled></el-input>
@@ -188,13 +188,13 @@ const privacyForm = ref({
 const securityLogs = ref([])
 
 const accountInfo = ref({
-  studentId: '2023020616',
-  fullName: '张三',
-  email: 'zhangsan@example.com',
-  phone: '13800000000',
-  college: '计算机科学学院',
-  major: '计算机科学与技术',
-  createdAt: '2023-09-01'
+  studentId: '',
+  name: '',
+  email: '',
+  phone: '',
+  collegeName: '',
+  majorName: '',
+  createdAt: ''
 })
 
 onMounted(async () => {
@@ -208,9 +208,11 @@ const loadSettings = async () => {
     const userId = getUserId()
     if (!userId) return
     const response = await studentAPI.getUserSettings(userId)
+    console.log('[Settings] API 响应:', response)
     if (response) {
       accountInfo.value = response
       privacyForm.value.scoresVisibility = String(response.privacyLevel || 1)
+      console.log('[Settings] 帐户信息已加载:', accountInfo.value)
     }
   } catch (error) {
     console.error('加载设置失败:', error)
@@ -292,7 +294,8 @@ const exportUserData = async () => {
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `personal_data_${Date.now()}.zip`
+    const timestamp = Date.now()
+    link.download = `个人数据_${timestamp}.xlsx`
     link.click()
     window.URL.revokeObjectURL(url)
   } catch (error) {
@@ -332,15 +335,8 @@ const updateAccount = async () => {
 
 // 重置账户表单
 const resetAccountForm = () => {
-  accountInfo.value = {
-    studentId: '2023020616',
-    fullName: '张三',
-    email: 'zhangsan@example.com',
-    phone: '13800000000',
-    college: '计算机科学学院',
-    major: '计算机科学与技术',
-    createdAt: '2023-09-01'
-  }
+  // 重置为当前已加载的数据
+  loadSettings()
 }
 </script>
 

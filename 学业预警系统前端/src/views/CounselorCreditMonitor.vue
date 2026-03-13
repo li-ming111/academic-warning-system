@@ -1,7 +1,7 @@
 <template>
   <div class="counselor-credit-monitor">
     <div class="page-header">
-      <h1>📚 班级学分监控</h1>
+      <h1>班级学分监控</h1>
       <p>班级学分达标率追踪和不足学生警示</p>
     </div>
 
@@ -32,7 +32,7 @@
     <!-- 班级达标率对比 -->
     <el-card style="margin-bottom: 20px;">
       <template #header>
-        <div class="card-header">📊 班级达标率对比</div>
+        <div class="card-header">班级达标率对比</div>
       </template>
 
       <el-table :data="monitor.classMonitors || []" stripe v-loading="loading">
@@ -61,7 +61,7 @@
     <!-- 学分不足学生 -->
     <el-card>
       <template #header>
-        <div class="card-header">⚠️ 学分不足学生</div>
+        <div class="card-header">学分不足学生</div>
       </template>
 
       <el-table :data="insufficientStudents" stripe v-loading="loading">

@@ -9,7 +9,7 @@
       <el-tab-pane label="账户管理">
         <el-card style="margin-top: 20px;">
           <template #header>
-            <div class="card-header">🔐 修改密码</div>
+            <div class="card-header">修改密码</div>
           </template>
           
           <el-form :model="passwordForm" label-width="120px">
@@ -30,7 +30,7 @@
 
         <el-card style="margin-top: 20px;">
           <template #header>
-            <div class="card-header">👤 个人信息</div>
+            <div class="card-header">个人信息</div>
           </template>
           
           <el-form :model="userInfo" label-width="120px">
@@ -53,7 +53,7 @@
       <el-tab-pane label="通知偏好">
         <el-card style="margin-top: 20px;">
           <template #header>
-            <div class="card-header">🔔 通知设置</div>
+            <div class="card-header">通知设置</div>
           </template>
           
           <el-form :model="notificationPreferences" label-width="200px">
@@ -82,7 +82,7 @@
       <el-tab-pane label="工作设置">
         <el-card style="margin-top: 20px;">
           <template #header>
-            <div class="card-header">💼 工作信息</div>
+            <div class="card-header">工作信息</div>
           </template>
           
           <el-form :model="workSettings" label-width="120px">

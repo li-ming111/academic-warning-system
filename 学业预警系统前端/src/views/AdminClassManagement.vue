@@ -1,15 +1,12 @@
 <template>
   <div class="admin-class-management">
-    <div class="page-header">
-      <h1>📊 班级管理申请审批</h1>
-      <p>查看和处理教师的班级管理申请</p>
-    </div>
+    
 
     <!-- 待审批申请列表 -->
     <el-card>
       <template #header>
         <div class="card-header">
-          ⏳ 待审批申请 
+          ⏳ 待审批申请
           <el-tag style="margin-left: 10px;">{{ pendingCount }}</el-tag>
         </div>
       </template>
@@ -54,7 +51,7 @@
     <!-- 历史申请 -->
     <el-card style="margin-top: 20px;">
       <template #header>
-        <div class="card-header">📚 所有申请记录</div>
+        <div class="card-header">所有申请记录</div>
       </template>
 
       <el-table :data="allRequests" stripe style="width: 100%">
@@ -161,14 +158,38 @@ onMounted(async () => {
 const loadRequests = async () => {
   try {
     const response = await adminAPI.getPendingClassManagementRequests()
+    console.log('后端返回的数据:', response)
     
+    let requestsData = []
     if (response && Array.isArray(response)) {
-      allRequests.value = response
-      pendingRequests.value = response.filter(req => req.status === 'pending')
+      requestsData = response
     } else if (response && response.data && Array.isArray(response.data)) {
-      allRequests.value = response.data
-      pendingRequests.value = response.data.filter(req => req.status === 'pending')
+      requestsData = response.data
     }
+    
+    // 确保每个请求都有teacherName和teacherUsername字段
+    const processedRequests = requestsData.map(req => {
+      // 如果没有teacherName字段，尝试使用userName字段，如果都没有则使用默认值
+      if (!req.teacherName) {
+        if (req.userName) {
+          req.teacherName = req.userName
+        } else {
+          req.teacherName = '未知教师'
+        }
+      }
+      // 如果没有teacherUsername字段，尝试使用userUsername字段，如果都没有则使用默认值
+      if (!req.teacherUsername) {
+        if (req.userUsername) {
+          req.teacherUsername = req.userUsername
+        } else {
+          req.teacherUsername = '未知工号'
+        }
+      }
+      return req
+    })
+    
+    allRequests.value = processedRequests
+    pendingRequests.value = processedRequests.filter(req => req.status === 'pending')
   } catch (error) {
     console.error('加载申请列表失败:', error)
     ElMessage.error('加载申请列表失败')
@@ -176,32 +197,47 @@ const loadRequests = async () => {
 }
 
 // 批准申请
-const approveRequest = async (requestId) => {
-  try {
-    ElMessageBox.confirm(
-      '确定要批准这个申请吗？批准后该教师将获得管理指定班级的权限。',
-      '确认批准',
-      {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        type: 'success'
+const approveRequest = (requestId) => {
+  ElMessageBox.confirm(
+    '确定要批准这个申请吗？批准后该教师将获得管理指定班级的权限。',
+    '确认批准',
+    {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'success'
+    }
+  ).then(async () => {
+    // 先刷新申请列表，确保获取最新的状态
+    try {
+      await loadRequests()
+      
+      // 检查申请是否仍然是待审批状态
+      const request = pendingRequests.value.find(req => req.id === requestId)
+      if (!request) {
+        ElMessage.warning('申请不存在或状态已变更')
+        return
       }
-    ).then(async () => {
+      
       loadingIds.value.push(requestId)
-      try {
-        await adminAPI.approveClassManagementRequest(requestId)
-        ElMessage.success('申请已批准')
-        await loadRequests()
-      } finally {
-        loadingIds.value = loadingIds.value.filter(id => id !== requestId)
-      }
-    }).catch(() => {
-      // 用户取消
-    })
-  } catch (error) {
-    console.error('批准申请失败:', error)
-    ElMessage.error(error.message || '批准申请失败')
-  }
+      adminAPI.approveClassManagementRequest(requestId)
+        .then(() => {
+          ElMessage.success('申请已批准')
+          loadRequests()
+        })
+        .catch((error) => {
+          console.error('批准申请失败:', error)
+          ElMessage.error(error.message || '批准申请失败')
+        })
+        .finally(() => {
+          loadingIds.value = loadingIds.value.filter(id => id !== requestId)
+        })
+    } catch (error) {
+      console.error('刷新申请列表失败:', error)
+      ElMessage.error('刷新申请列表失败')
+    }
+  }).catch(() => {
+    // 用户取消
+  })
 }
 
 // 显示拒绝对话框

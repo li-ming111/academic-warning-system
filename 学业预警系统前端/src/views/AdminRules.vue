@@ -9,7 +9,11 @@
       </template>
       <el-table :data="rulesList" stripe>
         <el-table-column prop="name" label="规则名称" />
-        <el-table-column prop="condition" label="触发条件" />
+        <el-table-column label="触发条件">
+          <template #default="{ row }">
+            {{ getConditionText(row) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="level" label="预警级别" />
         <el-table-column label="操作" width="150">
           <template #default="{ row }">
@@ -59,9 +63,14 @@ onMounted(async () => {
 
 const loadRules = async () => {
   try {
+    console.log('开始加载规则...')
     const response = await adminAPI.getRules()
+    console.log('获取到的规则数据:', response)
     if (Array.isArray(response)) {
+      console.log('规则数据是数组，长度:', response.length)
       rulesList.value = response
+    } else {
+      console.log('规则数据不是数组:', response)
     }
   } catch (error) {
     console.error('加载规则列表失败:', error)
@@ -69,6 +78,19 @@ const loadRules = async () => {
 }
 
 const testRule = (row) => ElMessage.success(`规则${row.name}测试通过`)
+
+const getConditionText = (row) => {
+  if (row.condition) {
+    return row.condition
+  } else if (row.threshold) {
+    if (row.name.includes('GPA')) {
+      return `GPA低于${row.threshold}`
+    } else if (row.name.includes('挂科')) {
+      return `分数低于${row.threshold}`
+    }
+  }
+  return ''
+}
 
 const submitAddRule = async () => {
   if (!ruleForm.value.name || !ruleForm.value.condition) {

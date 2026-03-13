@@ -109,7 +109,11 @@ public class CounselorServiceImpl extends ServiceImpl<CounselorProfileMapper, Co
             Notification notification = new Notification();
             notification.setUserId(studentId);
             notification.setContent(message);
+            notification.setType("system_message");
+            notification.setIsRead(0);
+            notification.setIsDeleted(0);
             notification.setCreatedAt(LocalDateTime.now());
+            notification.setUpdatedAt(LocalDateTime.now());
             notificationMapper.insert(notification);
         }
     }

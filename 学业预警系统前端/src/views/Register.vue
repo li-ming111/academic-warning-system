@@ -21,7 +21,8 @@
         </el-form-item>
 
         <el-form-item label="密码">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码"></el-input>
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" :value="defaultPassword"></el-input>
+          <span class="default-password-hint">默认密码: 123456</span>
         </el-form-item>
 
         <el-form-item label="手机号">
@@ -35,8 +36,10 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="handleRegister" :loading="loading">注册</el-button>
-          <router-link to="/login" class="login-link">已有账号？返回登录</router-link>
+          <div class="register-actions">
+            <el-button type="primary" @click="handleRegister" :loading="loading" class="register-btn">注册账号</el-button>
+            <router-link to="/login" class="login-link">已有账号？返回登录</router-link>
+          </div>
         </el-form-item>
       </el-form>
 
@@ -50,7 +53,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
+import apiClient from '@/api/client'
 
 const router = useRouter()
 const API_BASE_URL = 'http://localhost:8081/api'
@@ -62,10 +65,12 @@ const form = ref({
   collegeId: null,
   name: '',
   username: '',
-  password: '',
+  password: '123456',
   phone: '',
   email: ''
 })
+
+const defaultPassword = ref('123456')
 
 const loading = ref(false)
 const errorMessage = ref('')
@@ -88,16 +93,16 @@ const onStudentIdChange = async () => {
   
   // 从后端获取专业信息
   try {
-    const response = await axios.get(`${API_BASE_URL}/admin/majors`)
-    if (response.data && response.data.data) {
-      const major = response.data.data.find(m => m.code === majorCode)
+    const majors = await apiClient.get('/admin/majors')
+    if (majors) {
+      const major = majors.find(m => m.code === majorCode)
       if (major) {
         form.value.majorName = major.name
         form.value.majorId = major.id
         // 获取学院信息
-        const collegeResponse = await axios.get(`${API_BASE_URL}/admin/colleges/${major.collegeId}`)
-        if (collegeResponse.data && collegeResponse.data.data) {
-          form.value.collegeName = collegeResponse.data.data.name
+        const college = await apiClient.get(`/admin/colleges/${major.collegeId}`)
+        if (college) {
+          form.value.collegeName = college.name
           form.value.collegeId = major.collegeId
         }
       } else {
@@ -138,7 +143,7 @@ const handleRegister = async () => {
   loading.value = true
   try {
     // 调用后端注册API
-    const response = await axios.post(`${API_BASE_URL}/auth/register/student`, {
+    const response = await apiClient.post('/auth/register/student', {
       studentId: form.value.studentId,
       name: form.value.name,
       password: form.value.password,
@@ -146,17 +151,13 @@ const handleRegister = async () => {
       email: form.value.email
     })
 
-    if (response.data && response.data.code === 200) {
-      successMessage.value = '注册成功！请返回登录'
-      setTimeout(() => {
-        router.push('/login')
-      }, 1500)
-    } else {
-      errorMessage.value = response.data?.message || '注册失败'
-    }
+    successMessage.value = '注册成功！请返回登录'
+    setTimeout(() => {
+      router.push('/login')
+    }, 1500)
   } catch (error) {
     console.error('注册错误:', error)
-    errorMessage.value = error.response?.data?.message || error.message || '注册失败，请重试'
+    errorMessage.value = error.message || '注册失败，请重试'
   } finally {
     loading.value = false
   }
@@ -217,6 +218,13 @@ const handleRegister = async () => {
   margin-left: 10px;
 }
 
+.default-password-hint {
+  color: #909399;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
+}
+
 .login-link {
   margin-left: 20px;
   color: #409eff;
@@ -225,5 +233,31 @@ const handleRegister = async () => {
 
 .login-link:hover {
   text-decoration: underline;
+}
+
+.register-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.register-btn {
+  background-color: #409eff;
+  border-color: #409eff;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.register-btn:hover {
+  background-color: #66b1ff;
+  border-color: #66b1ff;
+}
+
+.login-link {
+  color: #409eff;
+  text-decoration: none;
+  font-size: 14px;
+  margin-left: 0;
 }
 </style>

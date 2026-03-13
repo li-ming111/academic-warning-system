@@ -17,6 +17,10 @@ public class Score extends BaseEntity {
 
     private String semester;
 
+    private BigDecimal regularScore;
+
+    private BigDecimal finalScore;
+
     private BigDecimal scoreTotal;
 
     private BigDecimal gradePoint;

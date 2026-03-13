@@ -22,10 +22,16 @@ public class ClassManagementRequest {
     private Long id;
     
     @TableField("teacher_id")
-    private Long teacherId;
+    private Long teacherId;  // 教师ID（如果是教师申请）
+    
+    @TableField("counselor_id")
+    private Long counselorId;  // 辅导员ID（如果是辅导员申请）
     
     @TableField("class_id")
     private Long classId;
+    
+    @TableField("user_type")
+    private String userType;  // 'teacher' 或 'counselor'
     
     @TableField("status")
     private String status; // pending, approved, rejected

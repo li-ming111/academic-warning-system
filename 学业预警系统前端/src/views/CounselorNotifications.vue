@@ -7,7 +7,7 @@
 
     <el-card>
       <template #header>
-        <div class="card-header">📢 创建新通知</div>
+        <div class="card-header">创建新通知</div>
       </template>
       
       <el-form :model="notificationForm" label-width="120px">
@@ -42,7 +42,7 @@
 
     <el-card style="margin-top: 20px;">
       <template #header>
-        <div class="card-header">📋 通知历史</div>
+        <div class="card-header">通知历史</div>
       </template>
       
       <el-table :data="notificationHistory" stripe>

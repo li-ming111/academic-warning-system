@@ -1,7 +1,7 @@
 <template>
   <div class="teacher-audit-log">
     <div class="page-header">
-      <h1>📋 成绩修改审计日志</h1>
+      <h1>成绩修改审计日志</h1>
       <p>查看成绩修改历史和变更记录</p>
     </div>
 
@@ -32,7 +32,7 @@
     <!-- 修改日志表格 -->
     <el-card style="margin-top: 20px;">
       <template #header>
-        <div class="card-header">📝 成绩修改记录</div>
+        <div class="card-header">成绩修改记录</div>
       </template>
 
       <el-table :data="scoreLogs" stripe v-loading="loading">

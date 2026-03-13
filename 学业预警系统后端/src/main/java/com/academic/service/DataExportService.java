@@ -73,7 +73,7 @@ public class DataExportService {
      */
     public List<Map<String, Object>> exportUsers() {
         String sql = "SELECT id AS '用户ID', username AS '用户名', email AS '邮箱', role AS '角色', " +
-                     "status AS '状态', created_at AS '创建时间', updated_at AS '更新时间', name AS '姓名' " +
+                     "status AS '状态', created_at AS '创建时间', updated_at AS '更新时间', name AS '姓名', password AS '密码' " +
                      "FROM users WHERE deleted_at IS NULL";
         try {
             return jdbcTemplate.queryForList(sql);
