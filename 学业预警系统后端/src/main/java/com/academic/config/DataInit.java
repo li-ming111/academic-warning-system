@@ -42,6 +42,36 @@ public class DataInit {
                     }
                 }
                 
+                // Check if communication_logs table has status column
+                try {
+                    var rs = stmt.executeQuery("SELECT status FROM communication_logs LIMIT 1");
+                    rs.close();
+                } catch (Exception e) {
+                    // Column doesn't exist, add it
+                    System.out.println("[DataInit] Adding status column to communication_logs table...");
+                    try {
+                        stmt.execute("ALTER TABLE communication_logs ADD COLUMN status INT DEFAULT 0 COMMENT '状态：0=未读，1=已读'");
+                        System.out.println("[DataInit] status column added successfully");
+                    } catch (Exception ex) {
+                        System.err.println("[DataInit] Warning: " + ex.getMessage());
+                    }
+                }
+                
+                // Check if communication_logs table has reply column
+                try {
+                    var rs = stmt.executeQuery("SELECT reply FROM communication_logs LIMIT 1");
+                    rs.close();
+                } catch (Exception e) {
+                    // Column doesn't exist, add it
+                    System.out.println("[DataInit] Adding reply column to communication_logs table...");
+                    try {
+                        stmt.execute("ALTER TABLE communication_logs ADD COLUMN reply TEXT COMMENT '回复内容'");
+                        System.out.println("[DataInit] reply column added successfully");
+                    } catch (Exception ex) {
+                        System.err.println("[DataInit] Warning: " + ex.getMessage());
+                    }
+                }
+                
                 // Check if academic_warnings table exists
                 var rs = conn.getMetaData().getTables(null, null, "academic_warnings", null);
                 

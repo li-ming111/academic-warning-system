@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录检查</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>登录检查</h1>
+    <button onclick="checkLogin()">检查登录状态</button>
+    <div class="result" id="result"></div>
+
+    <script>
+        function checkLogin() {
+            const resultDiv = document.getElementById('result');
+            const localStorageItems = {
+                token: localStorage.getItem('token'),
+                userId: localStorage.getItem('userId'),
+                username: localStorage.getItem('username'),
+                userName: localStorage.getItem('userName'),
+                role: localStorage.getItem('role')
+            };
+            
+            resultDiv.innerHTML = `
+                <h3>登录状态:</h3>
+                <pre>${JSON.stringify(localStorageItems, null, 2)}</pre>
+                <h3>是否已登录:</h3>
+                <p>${localStorage.getItem('token') ? '是' : '否'}</p>
+            `;
+        }
+        
+        // 页面加载时自动检查
+        window.onload = checkLogin;
+    </script>
+</body>
+</html>

@@ -67,9 +67,11 @@ public class UserSettingsServiceImpl extends ServiceImpl<StudentProfileMapper, S
      */
     @Override
     @Transactional
-    public boolean updatePrivacyLevel(Long studentId, Integer privacyLevel) {
+    public boolean updatePrivacyLevel(Long userId, Integer privacyLevel) {
         try {
-            StudentProfile student = studentProfileMapper.selectById(studentId);
+            QueryWrapper<StudentProfile> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("user_id", userId);
+            StudentProfile student = studentProfileMapper.selectOne(queryWrapper);
             if (student == null) {
                 return false;
             }
@@ -78,7 +80,7 @@ public class UserSettingsServiceImpl extends ServiceImpl<StudentProfileMapper, S
             student.setUpdatedAt(LocalDateTime.now());
             studentProfileMapper.updateById(student);
 
-            log.info("学生 {} 隐私级别更新为 {}", studentId, privacyLevel);
+            log.info("用户 {} 隐私级别更新为 {}", userId, privacyLevel);
             return true;
         } catch (Exception e) {
             log.error("更新隐私级别失败", e);

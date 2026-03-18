@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.academic.entity.AcademicWarning;
 import com.academic.entity.Score;
 import com.academic.entity.WarningRule;
+import com.academic.entity.SupportResource;
 import com.academic.mapper.AcademicWarningMapper;
 import com.academic.mapper.ScoreMapper;
 import com.academic.mapper.WarningRuleMapper;
 import com.academic.service.WarningService;
+import com.academic.service.SupportResourceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -21,10 +23,12 @@ public class WarningServiceImpl extends ServiceImpl<AcademicWarningMapper, Acade
 
     private final ScoreMapper scoreMapper;
     private final WarningRuleMapper warningRuleMapper;
+    private final SupportResourceService supportResourceService;
 
-    public WarningServiceImpl(ScoreMapper scoreMapper, WarningRuleMapper warningRuleMapper) {
+    public WarningServiceImpl(ScoreMapper scoreMapper, WarningRuleMapper warningRuleMapper, SupportResourceService supportResourceService) {
         this.scoreMapper = scoreMapper;
         this.warningRuleMapper = warningRuleMapper;
+        this.supportResourceService = supportResourceService;
     }
 
     @Override
@@ -133,12 +137,20 @@ public class WarningServiceImpl extends ServiceImpl<AcademicWarningMapper, Acade
                     } else if ("high".equals(level)) {
                         warning.setTitle("高级预警");
                     }
-                    warning.setDescription(String.format("学期末挂科数量：%d科，触发%s规则", failedCount, rule.getName()));
+                    String description = String.format("学期末挂科数量：%d科，触发%s规则", failedCount, rule.getName());
+                    warning.setDescription(description);
                     warning.setStatus("pending");
                     warning.setCreatedAt(LocalDateTime.now());
                     warning.setUpdatedAt(LocalDateTime.now());
                     this.save(warning);
                     log.info("为学生 {} 创建了{}  级预警", studentId, level);
+                    
+                    // 匹配帮扶资源
+                    List<SupportResource> resources = supportResourceService.matchResourcesForWarning(studentId, description);
+                    if (!resources.isEmpty()) {
+                        log.info("为学生 {} 匹配到 {} 个帮扶资源", studentId, resources.size());
+                        // 这里可以将资源信息存储到预警的扩展字段中，或者创建关联表
+                    }
                 }
             }
         }

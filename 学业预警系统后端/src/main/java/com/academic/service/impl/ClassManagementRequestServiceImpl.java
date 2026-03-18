@@ -6,10 +6,12 @@ import com.academic.entity.ClassManagementRequest;
 import com.academic.entity.Class;
 import com.academic.entity.User;
 import com.academic.entity.StudentProfile;
+import com.academic.entity.TeacherProfile;
 import com.academic.mapper.ClassManagementRequestMapper;
 import com.academic.mapper.ClassMapper;
 import com.academic.mapper.UserMapper;
 import com.academic.mapper.StudentProfileMapper;
+import com.academic.mapper.TeacherProfileMapper;
 import com.academic.service.ClassManagementRequestService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,15 +33,18 @@ public class ClassManagementRequestServiceImpl extends ServiceImpl<ClassManageme
     private final UserMapper userMapper;
     private final ClassMapper classMapper;
     private final StudentProfileMapper studentProfileMapper;
+    private final TeacherProfileMapper teacherProfileMapper;
 
     public ClassManagementRequestServiceImpl(ClassManagementRequestMapper requestMapper,
                                            UserMapper userMapper,
                                            ClassMapper classMapper,
-                                           StudentProfileMapper studentProfileMapper) {
+                                           StudentProfileMapper studentProfileMapper,
+                                           TeacherProfileMapper teacherProfileMapper) {
         this.requestMapper = requestMapper;
         this.userMapper = userMapper;
         this.classMapper = classMapper;
         this.studentProfileMapper = studentProfileMapper;
+        this.teacherProfileMapper = teacherProfileMapper;
     }
 
     @Override
@@ -135,6 +140,23 @@ public class ClassManagementRequestServiceImpl extends ServiceImpl<ClassManageme
 
     @Override
     public List<Map<String, Object>> getTeacherClasses(Long teacherId) {
+        // 获取教师信息，包括学院ID
+        User teacherUser = userMapper.selectById(teacherId);
+        if (teacherUser == null) {
+            return new ArrayList<>();
+        }
+        
+        // 获取教师的学院ID
+        QueryWrapper<TeacherProfile> teacherProfileQuery = new QueryWrapper<>();
+        teacherProfileQuery.eq("user_id", teacherId);
+        TeacherProfile teacherProfile = teacherProfileMapper.selectOne(teacherProfileQuery);
+        
+        if (teacherProfile == null) {
+            return new ArrayList<>();
+        }
+        
+        Long collegeId = teacherProfile.getCollegeId();
+        
         QueryWrapper<ClassManagementRequest> wrapper = new QueryWrapper<>();
         wrapper.eq("teacher_id", teacherId).eq("status", "approved");
         List<ClassManagementRequest> requests = requestMapper.selectList(wrapper);
@@ -143,6 +165,11 @@ public class ClassManagementRequestServiceImpl extends ServiceImpl<ClassManageme
         QueryWrapper<Class> classWrapper = new QueryWrapper<>();
         classWrapper.eq("teacher_id", teacherId);
         List<Class> directClasses = classMapper.selectList(classWrapper);
+        
+        // 获取教师所在学院的所有班级
+        QueryWrapper<Class> collegeClassWrapper = new QueryWrapper<>();
+        collegeClassWrapper.eq("college_id", collegeId);
+        List<Class> collegeClasses = classMapper.selectList(collegeClassWrapper);
 
         List<Map<String, Object>> result = new ArrayList<>();
         
@@ -156,6 +183,15 @@ public class ClassManagementRequestServiceImpl extends ServiceImpl<ClassManageme
         
         // 处理直接关联的班级
         for (Class clazz : directClasses) {
+            Map<String, Object> map = buildClassMap(clazz);
+            // 避免重复
+            if (!result.stream().anyMatch(m -> m.get("id").equals(map.get("id")))) {
+                result.add(map);
+            }
+        }
+        
+        // 处理学院的所有班级
+        for (Class clazz : collegeClasses) {
             Map<String, Object> map = buildClassMap(clazz);
             // 避免重复
             if (!result.stream().anyMatch(m -> m.get("id").equals(map.get("id")))) {

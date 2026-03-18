@@ -52,6 +52,7 @@ export const studentAPI = {
     return apiClient.get(`/students/${studentId}/gpa`)
   },
   getDashboard: (userId) => {
+    console.log('调用 getDashboard API, userId:', userId)
     return apiClient.get(`/students/dashboard/${userId}`)
   },
   getScores: (userId, semester) => {
@@ -214,6 +215,9 @@ export const studentAPI = {
   updateUserSettings: (userId, settings) => {
     return apiClient.put(`/students/settings/${userId}`, settings)
   },
+  updatePrivacy: (userId, privacyLevel) => {
+    return apiClient.post(`/students/settings/${userId}/privacy-level`, null, { params: { privacyLevel } })
+  },
   getSecurityLogs: (userId, page = 1, pageSize = 10) => {
     return apiClient.get(`/students/settings/${userId}/security-logs`, { params: { page, pageSize } })
   },
@@ -234,7 +238,7 @@ export const studentAPI = {
     return apiClient.get(`/students/messages/${userId}/unread-count`)
   },
   sendMessage: (data) => {
-    return apiClient.post(`/students/messages/send`, data)
+    return apiClient.post(`/students/messages`, data)
   },
   markMessageAsRead: (messageId) => {
     return apiClient.post(`/students/messages/${messageId}/mark-read`)
@@ -280,7 +284,7 @@ export const teacherAPI = {
     return apiClient.post(`/teachers/scores/import`, data)
   },
   getFeedbacks: (teacherId, category) => {
-    return apiClient.get(`/teachers/feedbacks`, { params: { teacher_id: teacherId, category } })
+    return apiClient.get(`/teachers/feedbacks`, { params: { teacherId: teacherId, category } })
   },
   replyFeedback: (feedbackId, data) => {
     return apiClient.put(`/teachers/feedbacks/${feedbackId}`, data)
@@ -288,7 +292,7 @@ export const teacherAPI = {
   getEnrollments: (teacherId, courseId) => {
     const params = {}
     if (teacherId) params.teacherId = teacherId
-    if (courseId) params.course_id = courseId
+    if (courseId) params.courseId = courseId
     return apiClient.get(`/teachers/enrollments`, { params })
   },
   saveCommunication: (data) => {
@@ -310,9 +314,6 @@ export const teacherAPI = {
     return apiClient.post(`/teachers/warnings/${warningId}/process`, data)
   },
   // ============= 班级管理申请API =============
-  submitClassManagementRequest: (data) => {
-    return apiClient.post(`/teachers/class-management/request`, data)
-  },
   getMyClassManagementRequests: (teacherId) => {
     return apiClient.get(`/teachers/class-management/requests`, { params: { teacherId } })
   },
@@ -382,15 +383,25 @@ export const teacherAPI = {
   submitClassManagementRequest: (data) => {
     return apiClient.post(`/teachers/class-management/apply`, data)
   },
-  getMyClassManagementRequests: (teacherId) => {
-    return apiClient.get(`/teachers/class-management/requests`, { params: { teacherId } })
-  },
   importStudents: (formData) => {
     return apiClient.post(`/teachers/students/import`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     })
+  },
+  getTeachers: () => {
+    return apiClient.get(`/teachers/list`)
+  },
+  // ========== 消息管理API ==========
+  getMessages: (userId) => {
+    return apiClient.get(`/teachers/messages/${userId}`)
+  },
+  getUnreadCount: (userId) => {
+    return apiClient.get(`/teachers/messages/${userId}/unread-count`)
+  },
+  markMessageAsRead: (messageId) => {
+    return apiClient.post(`/teachers/messages/${messageId}/mark-read`)
   }
 }
 
@@ -402,7 +413,7 @@ export const counselorAPI = {
     return apiClient.get(`/counselors/dashboard/${userId}`)
   },
   getStudents: (counselorId) => {
-    return apiClient.get(`/counselors/students`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/students`, { params: { counselor_id: counselorId } })
   },
   searchStudents: (searchName, classId) => {
     // 前端过滤，后端不提供此接口
@@ -415,7 +426,7 @@ export const counselorAPI = {
     return apiClient.post(`/counselors/students/notify`, data)
   },
   getWarnings: (counselorId, status) => {
-    return apiClient.get(`/counselors/warnings`, { params: { counselorId: counselorId, status } })
+    return apiClient.get(`/counselors/warnings`, { params: { counselor_id: counselorId, status } })
   },
   processWarning: (warningId, data) => {
     return apiClient.post(`/counselors/warnings/${warningId}/process`, data)
@@ -424,7 +435,7 @@ export const counselorAPI = {
     return apiClient.post(`/counselors/warnings/batch-process`, warningIds)
   },
   getEnrollments: (counselorId) => {
-    return apiClient.get(`/counselors/enrollments`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/enrollments`, { params: { counselor_id: counselorId } })
   },
   // ============= 帮扶计划API =============
   getPlansByStudent: (studentId) => {
@@ -438,30 +449,30 @@ export const counselorAPI = {
   },
   // ============= 成绩跟踪API =============
   getClassScores: (counselorId, classId) => {
-    return apiClient.get(`/counselors/scores/class/${classId}`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/scores/class/${classId}`, { params: { counselor_id: counselorId } })
   },
   getCourseScoreDistribution: (courseId) => {
     return apiClient.get(`/counselors/scores/distribution/${courseId}`)
   },
   getLowScoreStudents: (counselorId) => {
-    return apiClient.get(`/counselors/scores/low-score`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/scores/low-score`, { params: { counselor_id: counselorId } })
   },
   // ============= 通知中心API =============
   getNotificationHistory: (counselorId, page, size) => {
-    return apiClient.get(`/counselors/notifications/history`, { params: { counselorId: counselorId, page, size } })
+    return apiClient.get(`/counselors/notifications/history`, { params: { counselor_id: counselorId, page, size } })
   },
   getNotificationTemplates: () => {
     return apiClient.get(`/counselors/notifications/templates`)
   },
   getWeeklyNotifications: (counselorId) => {
-    return apiClient.get(`/counselors/notifications/weekly-count`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/notifications/weekly-count`, { params: { counselor_id: counselorId } })
   },
   // ============= 班级管理API =============
   getClasses: (counselorId) => {
-    return apiClient.get(`/counselors/classes`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/classes`, { params: { counselor_id: counselorId } })
   },
   getClassActivities: (counselorId) => {
-    return apiClient.get(`/counselors/classes/activities`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/classes/activities`, { params: { counselor_id: counselorId } })
   },
   getClassDetail: (classId) => {
     return apiClient.get(`/counselors/classes/${classId}/detail`)
@@ -473,33 +484,42 @@ export const counselorAPI = {
     return apiClient.get(`/counselors/classes/${classId}/warnings`)
   },
   compareClassWarnings: (counselorId) => {
-    return apiClient.get(`/counselors/classes/warnings/compare`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/classes/warnings/compare`, { params: { counselor_id: counselorId } })
   },
   // ============= 数据分析API =============
   getCreditInsufficientRate: (counselorId) => {
-    return apiClient.get(`/counselors/analytics/credit-insufficient`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/analytics/credit-insufficient`, { params: { counselor_id: counselorId } })
   },
   getWarningLevelDistribution: (counselorId) => {
-    return apiClient.get(`/counselors/analytics/warning-distribution`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/analytics/warning-distribution`, { params: { counselor_id: counselorId } })
   },
   getWarningHandlingEfficiency: (counselorId) => {
-    return apiClient.get(`/counselors/analytics/handling-efficiency`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/analytics/handling-efficiency`, { params: { counselor_id: counselorId } })
   },
   getClassCreditAchievementRanking: (counselorId) => {
-    return apiClient.get(`/counselors/analytics/credit-achievement-ranking`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/analytics/credit-achievement-ranking`, { params: { counselor_id: counselorId } })
   },
   getWarningTrend: (counselorId) => {
-    return apiClient.get(`/counselors/analytics/warning-trend`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/analytics/warning-trend`, { params: { counselor_id: counselorId } })
   },
   getAssistancePlanCompletionRate: (counselorId) => {
-    return apiClient.get(`/counselors/analytics/assistance-completion`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/analytics/assistance-completion`, { params: { counselor_id: counselorId } })
   },
   // ============= 学分监控API =============
   getCreditMonitor: (counselorId) => {
-    return apiClient.get(`/counselors/credit-monitor`, { params: { counselorId: counselorId } })
+    return apiClient.get(`/counselors/credit-monitor`, { params: { counselor_id: counselorId } })
   },
   getCreditInsufficientStudents: (counselorId, page = 1, size = 20) => {
-    return apiClient.get(`/counselors/credit-insufficient`, { params: { counselorId: counselorId, page, size } })
+    return apiClient.get(`/counselors/credit-insufficient`, { params: { counselor_id: counselorId, page, size } })
+  }
+}
+
+export const aiAPI = {
+  getResponse: (userId, message) => {
+    return apiClient.post(`/ai/chat`, { userId, message })
+  },
+  getSuggestions: (userId) => {
+    return apiClient.get(`/ai/suggestions/${userId}`)
   }
 }
 

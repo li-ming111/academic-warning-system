@@ -416,7 +416,11 @@ public class StudentController {
     @GetMapping("/messages/{userId}/unread-count")
     public ApiResponse<Long> getUnreadMessageCount(@PathVariable Long userId) {
         try {
-            Long count = communicationLogService.getUnreadCount(userId);
+            StudentProfile student = studentService.getByUserId(userId);
+            if (student == null) {
+                return ApiResponse.success(0L);
+            }
+            Long count = communicationLogService.getUnreadCount(student.getId());
             return ApiResponse.success(count);
         } catch (Exception e) {
             log.error("获取未读消息数失败", e);
@@ -427,7 +431,7 @@ public class StudentController {
     /**
      * 标记消息为已读
      */
-    @PostMapping("/messages/{messageId}/read")
+    @PostMapping("/messages/{messageId}/mark-read")
     public ApiResponse<String> markMessageAsRead(@PathVariable Long messageId) {
         try {
             boolean success = communicationLogService.markAsRead(messageId);

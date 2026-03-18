@@ -256,6 +256,8 @@ CREATE TABLE `communication_logs` (
     `student_id` BIGINT COMMENT '学生ID',
     `warning_id` BIGINT COMMENT '关联预警ID',
     `content` TEXT COMMENT '沟通内容',
+    `status` INT DEFAULT 0 COMMENT '状态：0=未读，1=已读',
+    `reply` TEXT COMMENT '回复内容',
     `category` VARCHAR(50) COMMENT '分类：预警处理，选修建议等',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

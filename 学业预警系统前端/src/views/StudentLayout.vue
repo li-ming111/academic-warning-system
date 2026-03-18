@@ -12,28 +12,28 @@
             class="nav-item"
             :class="{ active: isActive('/student/dashboard') }"
           >
-            <span>首页</span>
+            <span>学业看板</span>
           </router-link>
           <router-link 
             to="/student/scores" 
             class="nav-item"
             :class="{ active: isActive('/student/scores') }"
           >
-            <span>成绩查询</span>
+            <span>成绩分析</span>
           </router-link>
           <router-link 
             to="/student/warnings" 
             class="nav-item"
             :class="{ active: isActive('/student/warnings') }"
           >
-            <span>预警信息</span>
+            <span>预警管理</span>
           </router-link>
           <router-link 
             to="/student/assistance" 
             class="nav-item"
             :class="{ active: isActive('/student/assistance') }"
           >
-            <span>帮扶信息</span>
+            <span>帮扶计划</span>
           </router-link>
           <router-link 
             to="/student/appeals" 
@@ -86,12 +86,13 @@
       </div>
     </div>
 
-    <div class="main-wrapper">
-      <!-- 内容区 -->
-      <div class="content-area">
-        <router-view />
-      </div>
+    <!-- 主内容区 -->
+    <div class="main-content">
+      <router-view />
     </div>
+
+    <!-- AI小助手 -->
+    <AIAssistant />
   </div>
 </template>
 
@@ -113,6 +114,7 @@ import {
   User,
   Trophy
 } from '@element-plus/icons-vue'
+import AIAssistant from '@/components/AIAssistant.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -40,12 +40,18 @@ public class CommunicationLogServiceImpl extends ServiceImpl<CommunicationLogMap
     public Long getUnreadCount(Long studentId) {
         QueryWrapper<CommunicationLog> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("student_id", studentId);
+        queryWrapper.eq("status", 0); // 0=未读
         return this.count(queryWrapper);
     }
 
     @Override
     public boolean markAsRead(Long messageId) {
-        return true;
+        CommunicationLog log = this.getById(messageId);
+        if (log != null) {
+            log.setStatus(1); // 1表示已读
+            return this.updateById(log);
+        }
+        return false;
     }
 
     @Override

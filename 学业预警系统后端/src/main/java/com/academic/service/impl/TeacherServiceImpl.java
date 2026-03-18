@@ -1140,4 +1140,56 @@ public class TeacherServiceImpl extends ServiceImpl<TeacherProfileMapper, Teache
         // 记录批量删除操作
         log.info("批量删除成绩，数量: {}, IDs: {}", scoreIds.size(), scoreIds);
     }
+
+    @Override
+    public List<Map<String, Object>> getAllTeachers() {
+        List<Map<String, Object>> teachers = new ArrayList<>();
+        try {
+            // 查询所有角色为教师的用户
+            QueryWrapper<User> userQuery = new QueryWrapper<>();
+            userQuery.eq("role", 2); // 2 是教师角色
+            List<User> users = userMapper.selectList(userQuery);
+
+            for (User user : users) {
+                Map<String, Object> teacherInfo = new HashMap<>();
+                teacherInfo.put("id", user.getId());
+                teacherInfo.put("name", user.getName());
+                teacherInfo.put("username", user.getUsername());
+                teacherInfo.put("email", user.getEmail());
+                teacherInfo.put("phone", user.getPhone());
+                teachers.add(teacherInfo);
+            }
+        } catch (Exception e) {
+            log.error("获取教师列表失败", e);
+        }
+        return teachers;
+    }
+
+    @Override
+    public List<CommunicationLog> getTeacherMessages(Long teacherId) {
+        QueryWrapper<CommunicationLog> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("teacher_id", teacherId);
+        queryWrapper.orderByDesc("created_at");
+        return communicationLogMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public Long getTeacherUnreadCount(Long teacherId) {
+        QueryWrapper<CommunicationLog> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("teacher_id", teacherId);
+        // 0表示未读
+        queryWrapper.eq("status", 0);
+        return communicationLogMapper.selectCount(queryWrapper);
+    }
+
+    @Override
+    public boolean markMessageAsRead(Long messageId) {
+        CommunicationLog log = communicationLogMapper.selectById(messageId);
+        if (log != null) {
+            log.setStatus(1); // 1表示已读
+            communicationLogMapper.updateById(log);
+            return true;
+        }
+        return false;
+    }
 }

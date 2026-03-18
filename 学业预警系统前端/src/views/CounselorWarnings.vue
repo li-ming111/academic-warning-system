@@ -64,6 +64,7 @@
         </el-form-item>
         <el-form-item label="处理意见">
           <el-input v-model="handleForm.opinion" type="textarea" rows="3" placeholder="记录处理意见..."></el-input>
+          <el-button type="primary" plain @click="generateOpinion" style="margin-top: 10px;">生成处理意见</el-button>
         </el-form-item>
         <el-form-item label="分配协作">
           <el-select v-model="handleForm.assignTo" placeholder="选择协作人（如教师）">
@@ -83,8 +84,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { counselorAPI } from '@/api/index'
+import { ElMessage, ElLoading } from 'element-plus'
+import { counselorAPI, aiAPI } from '@/api/index'
 import { getUserId } from '@/utils/userUtils'
 
 const handleDialogVisible = ref(false)
@@ -161,6 +162,38 @@ const submitHandle = async () => {
 
 const viewDetails = (row) => {
   ElMessage.info(`${row.studentName}的预警详情`)
+}
+
+const generateOpinion = async () => {
+  if (!handleForm.value.warningId) {
+    ElMessage.error('请选择预警记录')
+    return
+  }
+  
+  const loading = ElLoading.service({
+    lock: true,
+    text: 'AI生成处理意见中...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
+  
+  try {
+    const userId = getUserId()
+    // 构建AI提示词
+    const prompt = `作为高校辅导员，为学生${handleForm.value.studentName}生成一份预警处理意见。请根据学生情况，包括预警原因、学习状态等，生成一段专业、合理的处理意见，内容应包括：1. 对学生情况的分析 2. 具体的帮扶措施 3. 后续跟踪计划。生成的内容要符合辅导员的专业身份，语言要正式、关怀。`
+    
+    const response = await aiAPI.getResponse(userId, prompt)
+    if (response && response.code === 0 && response.data) {
+      handleForm.value.opinion = response.data
+      ElMessage.success('处理意见生成成功')
+    } else {
+      ElMessage.error('生成处理意见失败')
+    }
+  } catch (error) {
+    console.error('生成处理意见失败:', error)
+    ElMessage.error('生成处理意见失败，请稍后重试')
+  } finally {
+    loading.close()
+  }
 }
 </script>
 

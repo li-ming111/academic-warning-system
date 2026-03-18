@@ -6,9 +6,11 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\config\RedisConfig.ja
 D:\ABS\学业预警系统后端\src\main\java\com\academic\config\ResponseHeaderFilter.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\config\SecurityConfig.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\controller\AdminController.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\controller\AIController.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\controller\AuthController.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\controller\CounselorController.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\controller\StudentController.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\controller\SupportResourceController.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\controller\TeacherController.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\dto\AdminDashboardResponse.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\dto\LoginRequest.java
@@ -44,6 +46,7 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\ScoreLog.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\SecurityLog.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\StudentProfile.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\SubscriptionPreference.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\SupportResource.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\TeacherCourse.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\TeacherProfile.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\entity\User.java
@@ -71,6 +74,7 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\ScoreMapper.ja
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\SecurityLogMapper.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\StudentProfileMapper.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\SubscriptionPreferenceMapper.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\SupportResourceMapper.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\TeacherCourseMapper.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\TeacherProfileMapper.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\UserMapper.java
@@ -79,6 +83,7 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\mapper\WarningRuleMap
 D:\ABS\学业预警系统后端\src\main\java\com\academic\security\AuthorizationInterceptor.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\security\RequireRole.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\AdminService.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\service\AIService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\AssistanceEvaluationService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\AssistancePlanService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\CacheService.java
@@ -100,6 +105,7 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\service\ExportService
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\FeedbackService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\ActivityService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\AdminServiceImpl.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\AIServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\AssistanceEvaluationServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\AssistancePlanServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\CacheServiceImpl.java
@@ -124,6 +130,7 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\StudentA
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\StudentBenchmarkServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\StudentNotificationServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\StudentServiceImpl.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\SupportResourceServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\TeacherServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\UserServiceImpl.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\impl\UserSettingsServiceImpl.java
@@ -137,6 +144,7 @@ D:\ABS\学业预警系统后端\src\main\java\com\academic\service\StudentAppeal
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\StudentBenchmarkService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\StudentNotificationService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\StudentService.java
+D:\ABS\学业预警系统后端\src\main\java\com\academic\service\SupportResourceService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\TeacherService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\UserService.java
 D:\ABS\学业预警系统后端\src\main\java\com\academic\service\UserSettingsService.java

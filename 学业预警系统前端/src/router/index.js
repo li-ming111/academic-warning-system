@@ -27,6 +27,7 @@ import TeacherFeedbackManagement from '../views/TeacherFeedbackManagement.vue'
 import TeacherFeedback from '../views/TeacherFeedback.vue'
 import TeacherCourses from '../views/TeacherCourses.vue'
 import TeacherClassManagement from '../views/TeacherClassManagement.vue'
+import TeacherMessages from '../views/TeacherMessages.vue'
 import CounselorDashboard from '../views/CounselorDashboard.vue'
 import CounselorRegister from '../views/CounselorRegister.vue'
 import CounselorStudents from '../views/CounselorStudents.vue'
@@ -204,6 +205,11 @@ const routes = [
         path: 'class-management',
         name: 'TeacherClassManagement',
         component: TeacherClassManagement
+      },
+      {
+        path: 'messages',
+        name: 'TeacherMessages',
+        component: TeacherMessages
       }
     ]
   },

@@ -204,4 +204,24 @@ public interface TeacherService extends IService<TeacherProfile> {
      * 批量删除成绩
      */
     void batchDeleteScores(List<Long> scoreIds);
+
+    /**
+     * 获取所有教师列表
+     */
+    List<Map<String, Object>> getAllTeachers();
+
+    /**
+     * 获取教师的消息列表
+     */
+    List<CommunicationLog> getTeacherMessages(Long teacherId);
+
+    /**
+     * 获取教师的未读消息数
+     */
+    Long getTeacherUnreadCount(Long teacherId);
+
+    /**
+     * 标记消息为已读
+     */
+    boolean markMessageAsRead(Long messageId);
 }

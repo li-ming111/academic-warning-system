@@ -58,8 +58,16 @@
     <!-- 发送消息对话框 -->
     <el-dialog v-model="sendDialogVisible" title="发送消息" width="600px">
       <el-form :model="messageForm" label-width="100px">
-        <el-form-item label="教师ID">
-          <el-input-number v-model="messageForm.teacherId" :min="1"></el-input-number>
+        <el-form-item label="教师">
+          <el-select v-model="messageForm.teacherId" placeholder="选择教师" @change="handleTeacherChange">
+            <el-option 
+              v-for="teacher in teachers" 
+              :key="teacher.id" 
+              :label="teacher.name" 
+              :value="teacher.id">
+              {{ teacher.name }} (ID: {{ teacher.id }})
+            </el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="消息类型">
           <el-select v-model="messageForm.type" placeholder="选择消息类型">
@@ -73,7 +81,7 @@
           <el-input 
             v-model="messageForm.content" 
             type="textarea" 
-            rows="4"
+            :rows="4"
             placeholder="请输入消息内容">
           </el-input>
         </el-form-item>
@@ -115,7 +123,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { studentAPI } from '../api/index'
+import { studentAPI, teacherAPI } from '../api/index'
 import { getUserId } from '@/utils/userUtils'
 
 const messages = ref([])
@@ -123,6 +131,7 @@ const unreadCount = ref(0)
 const sendDialogVisible = ref(false)
 const detailDialogVisible = ref(false)
 const selectedMessage = ref(null)
+const teachers = ref([])
 
 const messageForm = ref({
   teacherId: null,
@@ -152,18 +161,18 @@ const getTypeName = (type) => {
 
 const getStatusColor = (status) => {
   const map = {
-    'unread': 'danger',
-    'read': 'warning',
-    'replied': 'success'
+    0: 'danger',
+    1: 'warning',
+    2: 'success'
   }
   return map[status] || 'info'
 }
 
 const getStatusName = (status) => {
   const map = {
-    'unread': '未读',
-    'read': '已读',
-    'replied': '已回复'
+    0: '未读',
+    1: '已读',
+    2: '已回复'
   }
   return map[status] || status
 }
@@ -183,19 +192,49 @@ const loadMessages = async () => {
     }
 
     // 加载消息列表
-    const messagesResult = await studentAPI.getMessages(userId)
-    if (Array.isArray(messagesResult)) {
-      messages.value = messagesResult
+    console.log('开始加载消息，userId:', userId)
+    const messagesResponse = await studentAPI.getMessages(userId)
+    console.log('消息API响应:', messagesResponse)
+    if (Array.isArray(messagesResponse)) {
+      console.log('消息数据:', messagesResponse)
+      messages.value = messagesResponse
+    } else {
+      console.log('消息数据格式不正确:', messagesResponse)
     }
 
     // 加载未读数
-    const unreadResult = await studentAPI.getUnreadCount(userId)
-    if (typeof unreadResult === 'number') {
-      unreadCount.value = unreadResult
+    const unreadResponse = await studentAPI.getUnreadCount(userId)
+    console.log('未读消息数API响应:', unreadResponse)
+    if (typeof unreadResponse === 'number') {
+      console.log('未读消息数:', unreadResponse)
+      unreadCount.value = unreadResponse
+    } else {
+      console.log('未读消息数格式不正确:', unreadResponse)
     }
   } catch (error) {
     console.error('加载消息失败:', error)
     ElMessage.error('加载消息失败')
+  }
+}
+
+const loadTeachers = async () => {
+  try {
+    // 调用真实的API获取教师列表
+    const response = await teacherAPI.getTeachers()
+    if (Array.isArray(response)) {
+      teachers.value = response.map(teacher => ({
+        id: teacher.id,
+        name: teacher.name || teacher.username
+      }))
+    }
+  } catch (error) {
+    console.error('加载教师列表失败:', error)
+    // 加载失败时使用模拟数据作为 fallback
+    teachers.value = [
+      { id: 2, name: '张老师' },
+      { id: 3, name: '李老师' },
+      { id: 4, name: '王老师' }
+    ]
   }
 }
 
@@ -205,34 +244,76 @@ const openSendDialog = () => {
     type: '',
     content: ''
   }
+  loadTeachers()
   sendDialogVisible.value = true
 }
 
+const handleTeacherChange = (value) => {
+  console.log('选择的教师ID:', value)
+}
+
 const sendMessage = async () => {
+  console.log('发送按钮被点击')
+  console.log('messageForm:', messageForm.value)
+  
   if (!messageForm.value.teacherId) {
-    ElMessage.warning('请输入教师ID')
+    console.log('教师未选择')
+    ElMessage.warning('请选择教师')
     return
   }
   if (!messageForm.value.type) {
+    console.log('消息类型未选择')
     ElMessage.warning('请选择消息类型')
     return
   }
   if (!messageForm.value.content) {
+    console.log('消息内容为空')
     ElMessage.warning('请输入消息内容')
     return
   }
 
   try {
     const userId = localStorage.getItem('userId')
+    console.log('获取到的userId:', userId)
+    
+    // 获取学生档案信息，使用正确的studentId
+    const studentInfo = await studentAPI.getStudentInfoByUserId(userId)
+    console.log('获取到的学生信息:', studentInfo)
+    
+    const studentId = studentInfo.id
+    console.log('使用正确的studentId:', studentId)
+    
     const data = {
-      ...messageForm.value,
-      studentId: userId
+      teacherId: Number(messageForm.value.teacherId),
+      content: messageForm.value.content,
+      studentId: Number(studentId),
+      status: 0 // 设置消息状态为未读（0=未读）
     }
+    console.log('发送的数据:', data)
+    
+    console.log('调用studentAPI.sendMessage')
     const result = await studentAPI.sendMessage(data)
-    if (result && result.code === 200) {
+    console.log('API响应结果:', result)
+    
+    // 处理不同类型的响应
+    if (typeof result === 'string' && result.includes('消息已发送')) {
+      console.log('消息发送成功')
       ElMessage.success('消息已发送')
       sendDialogVisible.value = false
       loadMessages()
+    } else if (result && result.code === 200) {
+      console.log('消息发送成功')
+      ElMessage.success('消息已发送')
+      sendDialogVisible.value = false
+      loadMessages()
+    } else if (result && result.data && result.data.includes('消息已发送')) {
+      console.log('消息发送成功')
+      ElMessage.success('消息已发送')
+      sendDialogVisible.value = false
+      loadMessages()
+    } else {
+      console.log('API响应格式不正确')
+      ElMessage.error('发送失败：响应格式不正确')
     }
   } catch (error) {
     console.error('发送消息失败:', error)
@@ -245,7 +326,7 @@ const markAsRead = async (message) => {
     const result = await studentAPI.markMessageAsRead(message.id)
     if (result && result.code === 200) {
       ElMessage.success('已标记为已读')
-      message.status = 'read'
+      message.status = 1
       loadMessages()
     }
   } catch (error) {

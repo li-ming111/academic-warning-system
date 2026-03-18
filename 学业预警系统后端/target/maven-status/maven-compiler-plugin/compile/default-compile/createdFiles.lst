@@ -6,6 +6,7 @@ com\academic\service\StudentBenchmarkService.class
 com\academic\service\ClassManagementRequestService.class
 com\academic\service\DataExportService.class
 com\academic\dto\TeacherDashboardResponse.class
+com\academic\controller\AIController.class
 com\academic\service\AssistanceEvaluationService.class
 com\academic\entity\College.class
 com\academic\entity\ExportHistory.class
@@ -16,7 +17,9 @@ com\academic\service\impl\ScoreServiceImpl.class
 com\academic\service\CourseTeachingService.class
 com\academic\AcademicWarningApplication.class
 com\academic\service\impl\CounselorScoreServiceImpl.class
+com\academic\controller\SupportResourceController.class
 com\academic\service\CreditCalculationService.class
+com\academic\mapper\SupportResourceMapper.class
 com\academic\service\StudentService.class
 com\academic\mapper\CommunicationLogMapper.class
 com\academic\config\DataInit.class
@@ -26,6 +29,7 @@ com\academic\service\impl\CounselorNotificationServiceImpl.class
 com\academic\mapper\MajorMapper.class
 com\academic\service\impl\UserSettingsServiceImpl.class
 com\academic\entity\WarningRule.class
+com\academic\service\AIService.class
 com\academic\common\ApiResponse.class
 com\academic\controller\StudentController.class
 com\academic\mapper\AuditLogMapper.class
@@ -33,6 +37,8 @@ com\academic\mapper\ScoreLogMapper.class
 com\academic\mapper\ClassManagementRequestMapper.class
 com\academic\entity\AssistancePlan.class
 com\academic\service\AssistancePlanService.class
+com\academic\controller\SupportResourceController$MatchRequest.class
+com\academic\service\impl\SupportResourceServiceImpl.class
 com\academic\service\impl\ExcelScoreImportServiceImpl$1.class
 com\academic\service\impl\ClassManagementServiceImpl.class
 com\academic\mapper\CourseMapper.class
@@ -47,8 +53,10 @@ com\academic\service\impl\AdminServiceImpl.class
 com\academic\service\AdminService.class
 com\academic\config\MybatisPlusConfig.class
 com\academic\service\impl\CommunicationLogServiceImpl.class
+com\academic\entity\SupportResource.class
 com\academic\service\TeacherService.class
 com\academic\mapper\CollegeMapper.class
+com\academic\service\SupportResourceService.class
 com\academic\dto\ScoreResponse.class
 com\academic\mapper\FeedbackMapper.class
 com\academic\mapper\ClassMapper.class
@@ -64,6 +72,7 @@ com\academic\service\impl\CounselorAnalyticsServiceImpl.class
 com\academic\mapper\BenchmarkAnalysisMapper.class
 com\academic\mapper\StudentProfileMapper.class
 com\academic\service\StudentAppealService.class
+com\academic\service\impl\AIServiceImpl.class
 com\academic\service\CounselorNotificationService.class
 com\academic\service\impl\ActivityService.class
 com\academic\entity\Major.class

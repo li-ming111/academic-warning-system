@@ -147,6 +147,32 @@
           <li>参加教师组织的补课或答疑</li>
           <li>如有异议，可提交成绩申诉</li>
         </ul>
+
+        <el-divider></el-divider>
+
+        <p style="color: #67c23a;"><strong>推荐帮扶资源：</strong></p>
+        <div v-if="supportResources.length > 0">
+          <el-card v-for="resource in supportResources" :key="resource.id" style="margin-bottom: 10px;">
+            <div class="resource-item">
+              <div class="resource-header">
+                <span class="resource-name">{{ resource.name }}</span>
+                <el-tag :type="getResourceTypeTag(resource.type)">{{ getResourceTypeName(resource.type) }}</el-tag>
+              </div>
+              <div class="resource-body">
+                <p>{{ resource.description }}</p>
+                <div v-if="resource.schedule" class="resource-schedule">
+                  <strong>时间：</strong>{{ resource.schedule }}
+                </div>
+                <div v-if="resource.link" class="resource-link">
+                  <el-button type="primary" size="small" @click="openResourceLink(resource.link)">查看详情</el-button>
+                </div>
+              </div>
+            </div>
+          </el-card>
+        </div>
+        <div v-else class="no-resources">
+          暂无推荐的帮扶资源
+        </div>
       </div>
     </el-dialog>
   </div>
@@ -164,6 +190,7 @@ const detailsDialogVisible = ref(false)
 const appealDialogVisible = ref(false)
 const selectedWarning = ref(null)
 const pendingAppeals = ref([])
+const supportResources = ref([])
 
 const appealForm = ref({
   warningId: null,
@@ -265,12 +292,6 @@ const getLevelType = (level) => {
   }
 }
 
-// 查看详情
-const viewDetails = (row) => {
-  selectedWarning.value = row
-  detailsDialogVisible.value = true
-}
-
 // 打开申诉对话框
 const openAppealDialog = (row) => {
   appealForm.value = {
@@ -318,6 +339,92 @@ const viewAppealDetails = async (row) => {
   } catch (error) {
     console.error('加载申诉详情失败:', error)
   }
+}
+
+// 获取资源类型标签
+const getResourceTypeTag = (type) => {
+  switch (type) {
+    case 'group':
+      return 'success'
+    case 'lecture':
+      return 'warning'
+    case 'mentor':
+      return 'info'
+    default:
+      return 'info'
+  }
+}
+
+// 获取资源类型名称
+const getResourceTypeName = (type) => {
+  switch (type) {
+    case 'group':
+      return '帮扶小组'
+    case 'lecture':
+      return '讲座'
+    case 'mentor':
+      return '朋辈导师'
+    default:
+      return '其他'
+  }
+}
+
+// 打开资源链接
+const openResourceLink = (link) => {
+  window.open(link, '_blank')
+}
+
+// 加载帮扶资源
+const loadSupportResources = async (studentId, courseCode) => {
+  try {
+    // 这里需要调用后端API获取帮扶资源
+    // 暂时使用模拟数据
+    supportResources.value = [
+      {
+        id: 1,
+        name: '高数帮扶小组',
+        type: 'group',
+        courseCode: 'MATH101',
+        description: '由高年级优秀学生组成的帮扶小组，每周定期开展辅导活动，帮助同学解决高数学习中的问题。',
+        link: 'https://example.com/math-group',
+        status: 'active',
+        schedule: '每周二、四晚上 19:00-21:00'
+      },
+      {
+        id: 2,
+        name: '高数串讲讲座',
+        type: 'lecture',
+        courseCode: 'MATH101',
+        description: '由数学学院资深教授主讲的高数串讲讲座，涵盖重点难点内容，帮助同学系统复习。',
+        link: 'https://example.com/math-lecture',
+        status: 'active',
+        schedule: '本周末下午 14:00-16:00'
+      },
+      {
+        id: 3,
+        name: '高数朋辈导师',
+        type: 'mentor',
+        courseCode: 'MATH101',
+        description: '由高数成绩优异的学长学姐担任朋辈导师，一对一指导学习方法和解题技巧。',
+        link: 'https://example.com/math-mentor',
+        status: 'active',
+        mentorId: 1001
+      }
+    ]
+  } catch (error) {
+    console.error('加载帮扶资源失败:', error)
+    supportResources.value = []
+  }
+}
+
+// 修改查看详情方法，加载帮扶资源
+const viewDetails = (row) => {
+  selectedWarning.value = row
+  // 加载帮扶资源
+  const userId = getUserId()
+  const courseCode = row.courseName || 'MATH101' // 暂时使用默认课程代码
+  loadSupportResources(userId, courseCode)
+  detailsDialogVisible.value = true
 }
 </script>
 
@@ -390,5 +497,48 @@ const viewAppealDetails = async (row) => {
 .warning-details li {
   margin: 8px 0;
   color: #666;
+}
+
+.resource-item {
+  padding: 10px;
+}
+
+.resource-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.resource-name {
+  font-weight: bold;
+  font-size: 14px;
+  color: #333;
+}
+
+.resource-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #666;
+}
+
+.resource-schedule {
+  margin: 8px 0;
+  padding: 4px 8px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.resource-link {
+  margin-top: 10px;
+}
+
+.no-resources {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
 }
 </style>

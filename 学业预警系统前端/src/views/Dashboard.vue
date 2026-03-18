@@ -280,7 +280,8 @@ const loadDashboard = async () => {
   try {
     const userId = getUserId()
     const studentId = localStorage.getItem('studentId')
-    console.log('Dashboard 加载 - userId:', userId, 'studentId:', studentId)
+    console.log('Dashboard 加载 - userId:', userId, 'studentId:', studentId, 'localStorage 内容:', Object.fromEntries(Object.entries(localStorage)))
+    console.log('getUserId() 函数返回值类型:', typeof userId)
     
     if (!userId) {
       console.error('用户ID不存在，无法加载数据')

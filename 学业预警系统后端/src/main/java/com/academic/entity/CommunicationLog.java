@@ -15,4 +15,8 @@ public class CommunicationLog extends BaseEntity {
 
     private String content;  // 沟通内容
 
+    private Integer status;  // 消息状态：0=未读，1=已读
+
+    private String reply;  // 教师回复内容
+
 }

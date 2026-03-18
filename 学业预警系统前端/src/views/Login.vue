@@ -137,6 +137,8 @@ const handleLogin = async () => {
 
     if (response && response.token) {
       // 保存token和用户信息
+      console.log('登录响应完整数据:', response)
+      console.log('响应中的 userId 类型:', typeof response.userId, '值:', response.userId)
       localStorage.setItem('token', response.token)
       localStorage.setItem('userId', response.userId)
       localStorage.setItem('username', response.username)
@@ -162,6 +164,7 @@ const handleLogin = async () => {
       console.log('登录成功，响应数据:', response)
       // 保存学号
       const role = String(response.role)
+      console.log('登录角色:', role, '响应中的 studentId:', response.studentId, 'username:', response.username)
       if (role === '1' || role === 'student') {
         // 学生：username 就是学号
         localStorage.setItem('studentId', response.username)

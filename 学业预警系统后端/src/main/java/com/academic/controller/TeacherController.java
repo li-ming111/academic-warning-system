@@ -9,6 +9,7 @@ import com.academic.service.WarningService;
 import com.academic.service.ClassManagementRequestService;
 import com.academic.service.ExcelScoreImportService;
 import com.academic.mapper.StudentProfileMapper;
+import com.academic.mapper.ClassMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,16 +34,19 @@ public class TeacherController {
     private final StudentProfileMapper studentProfileMapper;
     private final ClassManagementRequestService classManagementRequestService;
     private final ExcelScoreImportService excelScoreImportService;
+    private final ClassMapper classMapper;
 
     public TeacherController(TeacherService teacherService, WarningService warningService,
                              StudentProfileMapper studentProfileMapper,
                              ClassManagementRequestService classManagementRequestService,
-                             ExcelScoreImportService excelScoreImportService) {
+                             ExcelScoreImportService excelScoreImportService,
+                             ClassMapper classMapper) {
         this.teacherService = teacherService;
         this.warningService = warningService;
         this.studentProfileMapper = studentProfileMapper;
         this.classManagementRequestService = classManagementRequestService;
         this.excelScoreImportService = excelScoreImportService;
+        this.classMapper = classMapper;
     }
 
     /**
@@ -226,6 +230,59 @@ public class TeacherController {
     }
 
     /**
+     * 获取教师的消息列表
+     */
+    @GetMapping("/messages/{userId}")
+    public ApiResponse<List<CommunicationLog>> getMessages(@PathVariable Long userId) {
+        try {
+            TeacherProfile teacher = teacherService.getByUserId(userId);
+            if (teacher == null) {
+                return ApiResponse.error(404, "教师不存在");
+            }
+            List<CommunicationLog> messages = teacherService.getTeacherMessages(teacher.getId());
+            return ApiResponse.success(messages);
+        } catch (Exception e) {
+            log.error("获取消息列表失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取教师的未读消息数
+     */
+    @GetMapping("/messages/{userId}/unread-count")
+    public ApiResponse<Long> getUnreadCount(@PathVariable Long userId) {
+        try {
+            TeacherProfile teacher = teacherService.getByUserId(userId);
+            if (teacher == null) {
+                return ApiResponse.error(404, "教师不存在");
+            }
+            Long count = teacherService.getTeacherUnreadCount(teacher.getId());
+            return ApiResponse.success(count);
+        } catch (Exception e) {
+            log.error("获取未读消息数失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 标记消息为已读
+     */
+    @PostMapping("/messages/{messageId}/mark-read")
+    public ApiResponse<String> markMessageAsRead(@PathVariable Long messageId) {
+        try {
+            boolean success = teacherService.markMessageAsRead(messageId);
+            if (success) {
+                return ApiResponse.success("已标记为已读");
+            }
+            return ApiResponse.error("标记失败");
+        } catch (Exception e) {
+            log.error("标记消息为已读失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
      * 查询教师班级的学生列表
      */
     @GetMapping("/students/{teacherId}")
@@ -236,10 +293,27 @@ public class TeacherController {
                 return ApiResponse.error(404, "教师不存在");
             }
 
-            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<StudentProfile> queryWrapper =
+            // 查询教师所教班级的学生
+            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<com.academic.entity.Class> classQuery =
                     new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
-            queryWrapper.eq("college_id", teacher.getCollegeId());
-            List<StudentProfile> students = studentProfileMapper.selectList(queryWrapper);
+            classQuery.eq("teacher_id", teacherId);
+            List<com.academic.entity.Class> classes = classMapper.selectList(classQuery);
+
+            if (classes.isEmpty()) {
+                // 如果教师没有分配班级，返回空列表
+                return ApiResponse.success(new java.util.ArrayList<>());
+            }
+
+            // 提取班级ID
+            java.util.List<Long> classIds = classes.stream()
+                    .map(com.academic.entity.Class::getId)
+                    .collect(java.util.stream.Collectors.toList());
+
+            // 查询这些班级的学生
+            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<StudentProfile> studentQuery =
+                    new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+            studentQuery.in("class_id", classIds);
+            List<StudentProfile> students = studentProfileMapper.selectList(studentQuery);
 
             return ApiResponse.success(students);
         } catch (Exception e) {
@@ -673,6 +747,20 @@ public class TeacherController {
             return ApiResponse.success(requestId);
         } catch (Exception e) {
             log.error("申请班级管理失败", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取所有教师列表
+     */
+    @GetMapping("/list")
+    public ApiResponse<List<Map<String, Object>>> getTeachers() {
+        try {
+            List<Map<String, Object>> teachers = teacherService.getAllTeachers();
+            return ApiResponse.success(teachers);
+        } catch (Exception e) {
+            log.error("获取教师列表失败", e);
             return ApiResponse.error(e.getMessage());
         }
     }

@@ -96,6 +96,7 @@
         </el-form-item>
         <el-form-item label="沟通内容">
           <el-input v-model="handleForm.communication" type="textarea" rows="4" placeholder="记录与学生的沟通内容"></el-input>
+          <el-button type="primary" plain @click="generateCommunication" style="margin-top: 10px;">生成沟通内容</el-button>
         </el-form-item>
         <el-form-item label="跟踪进度">
           <el-input-number v-model="handleForm.progress" :min="0" :max="100" :step="10"></el-input-number>
@@ -131,8 +132,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { teacherAPI } from '@/api/index'
+import { ElMessage, ElLoading } from 'element-plus'
+import { teacherAPI, aiAPI } from '@/api/index'
 import { getUserId } from '@/utils/userUtils'
 
 const handleDialogVisible = ref(false)
@@ -252,6 +253,39 @@ const submitHandle = async () => {
   } catch (error) {
     console.error('处理预警失败:', error)
     ElMessage.error('处理预警失败')
+  }
+}
+
+// 生成沟通内容
+const generateCommunication = async () => {
+  if (!handleForm.value.warningId) {
+    ElMessage.error('请选择预警记录')
+    return
+  }
+  
+  const loading = ElLoading.service({
+    lock: true,
+    text: 'AI生成沟通内容中...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
+  
+  try {
+    const userId = getUserId()
+    // 构建AI提示词
+    const prompt = `作为高校教师，为与学生${handleForm.value.studentName}的沟通生成一份专业的沟通记录。学生在课程${handleForm.value.course}中表现不佳，需要进行沟通辅导。请生成一段专业、关怀的沟通内容，内容应包括：1. 对学生当前学习情况的关心 2. 针对课程学习的具体建议 3. 鼓励和支持的话语。生成的内容要符合教师的专业身份，语言要正式、温暖。`
+    
+    const response = await aiAPI.getResponse(userId, prompt)
+    if (response && response.code === 0 && response.data) {
+      handleForm.value.communication = response.data
+      ElMessage.success('沟通内容生成成功')
+    } else {
+      ElMessage.error('生成沟通内容失败')
+    }
+  } catch (error) {
+    console.error('生成沟通内容失败:', error)
+    ElMessage.error('生成沟通内容失败，请稍后重试')
+  } finally {
+    loading.close()
   }
 }
 </script>

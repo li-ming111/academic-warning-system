@@ -56,6 +56,13 @@
           >
             <span>班级管理</span>
           </router-link>
+          <router-link 
+            to="/teacher/messages" 
+            class="nav-item"
+            :class="{ active: isActive('/teacher/messages') }"
+          >
+            <span>消息中心</span>
+          </router-link>
         </nav>
       </div>
       <div class="navbar-right">
