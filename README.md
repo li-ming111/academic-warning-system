@@ -25,6 +25,9 @@
 
 ### 后端技术栈
 - **框架**: Spring Boot 3.3.0
+- **微服务框架**: Spring Cloud
+- **服务注册与发现**: Eureka
+- **服务调用**: OpenFeign
 - **数据库**: MySQL 8.0
 - **ORM**: MyBatis Plus
 - **安全**: Spring Security
@@ -75,24 +78,48 @@
 - MySQL 8.0+
 - Redis 6.0+
 
-### 后端启动
+### 微服务启动顺序
+
+#### 1. 启动 Eureka 服务注册中心
 
 ```bash
-cd 学业预警系统后端
-
-# 编译并打包
-mvn clean package -DskipTests
-
-# 运行 JAR 包
-java -jar target/academic-warning-system-1.0.0.jar
+cd academic-microservices/eureka-server
+mvn spring-boot:run
 ```
 
-后端服务将在 `http://localhost:8081/api` 启动
+Eureka 服务将在 `http://localhost:8761` 启动
+
+#### 2. 启动用户服务
+
+```bash
+cd academic-microservices/user-service
+mvn spring-boot:run
+```
+
+用户服务将在 `http://localhost:8082/api` 启动并注册到 Eureka
+
+#### 3. 启动学生服务
+
+```bash
+cd academic-microservices/student-service
+mvn spring-boot:run
+```
+
+学生服务将在 `http://localhost:8083/api` 启动并注册到 Eureka
+
+#### 4. 启动后端主服务
+
+```bash
+cd academic-warning-backend
+mvn spring-boot:run
+```
+
+后端主服务将在 `http://localhost:8081/api` 启动并注册到 Eureka
 
 ### 前端启动
 
 ```bash
-cd 学业预警系统前端
+cd academic-warning-frontend
 
 # 安装依赖
 npm install
@@ -142,21 +169,13 @@ npm run build
 ## 📁 项目结构
 
 ```
-academic-warning-system/
-├── 学业预警系统前端/              # 前端应用
-│   ├── src/
-│   │   ├── views/                # 各功能页面
-│   │   ├── components/           # 可复用组件
-│   │   ├── router/               # 路由配置
-│   │   ├── store/                # 状态管理
-│   │   ├── api/                  # API 接口调用
-│   │   ├── assets/               # 静态资源
-│   │   └── utils/                # 工具函数
-│   ├── package.json
-│   ├── vite.config.js
-│   └── index.html
+ABS/
+├── academic-microservices/       # 微服务架构
+│   ├── eureka-server/            # 服务注册中心
+│   ├── user-service/             # 用户服务
+│   └── student-service/          # 学生服务
 │
-├── 学业预警系统后端/              # 后端应用
+├── academic-warning-backend/     # 后端主服务
 │   ├── src/main/java/com/academic/
 │   │   ├── controller/           # 控制器
 │   │   ├── service/              # 业务逻辑
@@ -171,6 +190,23 @@ academic-warning-system/
 │   ├── pom.xml
 │   └── target/                   # 编译输出
 │
+├── academic-warning-frontend/    # 前端应用
+│   ├── src/
+│   │   ├── views/                # 各功能页面
+│   │   ├── components/           # 可复用组件
+│   │   ├── router/               # 路由配置
+│   │   ├── store/                # 状态管理
+│   │   ├── api/                  # API 接口调用
+│   │   ├── assets/               # 静态资源
+│   │   └── utils/                # 工具函数
+│   ├── package.json
+│   ├── vite.config.js
+│   └── index.html
+│
+├── academic-warning-xcx/         # 小程序前端
+│
+├── API_DOCUMENTATION.md          # API 文档
+├── SYSTEM_DOCUMENTATION.md       # 系统文档
 └── README.md                      # 项目说明文档
 ```
 
@@ -296,6 +332,6 @@ A: 确保 Redis 服务在 `localhost:6379` 运行，或修改配置文件。
 
 ---
 
-**最后更新**: 2025-12-25
+**最后更新**: 2026-03-31
 
 希望这个系统能够帮助学生更好地管理学业，帮助教育工作者更有效地进行教学管理！
