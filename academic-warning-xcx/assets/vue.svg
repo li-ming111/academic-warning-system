@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="20" fill="#ffffff" stroke="#4facfe" stroke-width="4"/>
+  <circle cx="100" cy="80" r="30" fill="#4facfe"/>
+  <path d="M70,120 L130,120 L110,160 L90,160 Z" fill="#00f2fe"/>
+  <text x="100" y="180" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1A3D5C">智学预警</text>
+</svg>

@@ -1,0 +1,9 @@
+com\academic\dto\LoginRequest.class
+com\academic\service\impl\UserServiceImpl.class
+com\academic\dto\LoginResponse.class
+com\academic\controller\AuthController.class
+com\academic\entity\User.class
+com\academic\service\UserService.class
+com\academic\common\ApiResponse.class
+com\academic\mapper\UserMapper.class
+com\academic\UserServiceApplication.class

@@ -17,3 +17,4 @@ dist/
 # Build
 .gradle/
 build/
+node_modules

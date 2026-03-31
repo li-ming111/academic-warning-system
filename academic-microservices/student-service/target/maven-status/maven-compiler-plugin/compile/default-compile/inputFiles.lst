@@ -1,0 +1,12 @@
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\controller\StudentController.java
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\mapper\ScoreMapper.java
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\mapper\StudentProfileMapper.java
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\common\ApiResponse.java
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\service\StudentService.java
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\entity\AcademicWarning.java
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\entity\StudentProfile.java
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\service\impl\StudentServiceImpl.java
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\StudentServiceApplication.java
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\dto\StudentDashboardResponse.java
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\entity\Score.java
+D:\ABS\academic-microservices\student-service\src\main\java\com\academic\mapper\AcademicWarningMapper.java

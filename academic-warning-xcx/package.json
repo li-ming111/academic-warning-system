@@ -1,0 +1,34 @@
+{
+  "name": "academic-warning-mini-program",
+  "version": "1.0.0",
+  "description": "Academic Warning System Mini Program",
+  "main": "main.js",
+  "scripts": {
+    "dev": "uni-app dev",
+    "build": "uni-app build",
+    "lint": "eslint --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore ."
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "latest",
+    "@dcloudio/uni-ui": "latest",
+    "vue": "^3.2.0"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "^2.0.0",
+    "@dcloudio/uni-automator": "^2.0.0",
+    "@dcloudio/uni-cli-shared": "^2.0.0",
+    "@dcloudio/uni-migration": "^2.0.0",
+    "@dcloudio/uni-template-compiler": "^2.0.0",
+    "@vue/eslint-config-standard": "^6.1.0",
+    "eslint": "^7.32.0",
+    "eslint-plugin-vue": "^7.19.1"
+  },
+  "keywords": [
+    "uni-app",
+    "academic",
+    "warning",
+    "mini-program"
+  ],
+  "author": "",
+  "license": "MIT"
+}

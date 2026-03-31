@@ -1,0 +1,12 @@
+com\academic\mapper\AcademicWarningMapper.class
+com\academic\mapper\StudentProfileMapper.class
+com\academic\StudentServiceApplication.class
+com\academic\common\ApiResponse.class
+com\academic\controller\StudentController.class
+com\academic\service\impl\StudentServiceImpl.class
+com\academic\entity\StudentProfile.class
+com\academic\entity\AcademicWarning.class
+com\academic\dto\StudentDashboardResponse.class
+com\academic\mapper\ScoreMapper.class
+com\academic\service\StudentService.class
+com\academic\entity\Score.class
